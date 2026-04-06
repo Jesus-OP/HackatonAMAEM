@@ -1,0 +1,237 @@
+FECHA_INICIO;FECHA_FIN;HORA;TIPO_EVENTO;BARRIO_AFECTADO;IMPACTO;DURACION
+2025-06-25 00:00:00;2025-06-25 00:00:00;00:00:00;Banya;Todos;5;corto plazo
+2026-06-25 00:00:00;2026-06-25 00:00:00;00:00:00;Banya;Todos;5;corto plazo
+2024-06-25 00:00:00;2024-06-25 00:00:00;00:00:00;Banya;Todos;5;corto plazo
+2023-06-25 00:00:00;2023-06-25 00:00:00;00:00:00;Banya;Todos;5;corto plazo
+2026-03-26 00:00:00;2026-03-26 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-03-31 00:00:00;2026-03-31 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-04-05 00:00:00;2026-04-05 00:00:00;10:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-04-07 00:00:00;2026-04-07 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-04-11 00:00:00;2026-04-11 00:00:00;09:30:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-04-12 00:00:00;2026-04-12 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-04-14 00:00:00;2026-04-14 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-04-15 00:00:00;2026-04-15 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-04-16 00:00:00;2026-04-16 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-04-18 00:00:00;2026-04-18 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-04-22 00:00:00;2026-04-22 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-04-22 00:00:00;2026-04-22 00:00:00;08:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-04-25 00:00:00;2026-04-25 00:00:00;07:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-04-25 00:00:00;2026-04-25 00:00:00;11:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-05-02 00:00:00;2026-05-02 00:00:00;09:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-05-04 00:00:00;2026-05-04 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-05-07 00:00:00;2026-05-07 00:00:00;10:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-05-09 00:00:00;2026-05-09 00:00:00;08:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-05-09 00:00:00;2026-05-09 00:00:00;10:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-05-10 00:00:00;2026-05-10 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-05-20 00:00:00;2026-05-20 00:00:00;08:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-05-20 00:00:00;2026-05-20 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-05-27 00:00:00;2026-05-27 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-05-30 00:00:00;2026-05-30 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-05-30 00:00:00;2026-05-30 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-06-03 00:00:00;2026-06-03 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-06-06 00:00:00;2026-06-06 00:00:00;10:30:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-06-09 00:00:00;2026-06-09 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-06-10 00:00:00;2026-06-10 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-06-12 00:00:00;2026-06-12 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-06-14 00:00:00;2026-06-14 00:00:00;12:30:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-06-15 00:00:00;2026-06-15 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-06-17 00:00:00;2026-06-17 00:00:00;08:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-06-17 00:00:00;2026-06-17 00:00:00;09:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-06-19 00:00:00;2026-06-19 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-06-20 00:00:00;2026-06-20 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-06-22 00:00:00;2026-06-22 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-06-27 00:00:00;2026-06-27 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-06-27 00:00:00;2026-06-27 00:00:00;09:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-06-29 00:00:00;2026-06-29 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-07-09 00:00:00;2026-07-09 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-07-10 00:00:00;2026-07-10 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-07-15 00:00:00;2026-07-15 00:00:00;08:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-07-18 00:00:00;2026-07-18 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-07-19 00:00:00;2026-07-19 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-07-29 00:00:00;2026-07-29 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-07-30 00:00:00;2026-07-30 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;5;corto plazo
+2026-07-31 00:00:00;2026-07-31 00:00:00;10:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;5;corto plazo
+2026-08-04 00:00:00;2026-08-04 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-08-08 00:00:00;2026-08-08 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-08-08 00:00:00;2026-08-08 00:00:00;09:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-08-11 00:00:00;2026-08-11 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-08-15 00:00:00;2026-08-15 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-08-16 00:00:00;2026-08-16 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-08-18 00:00:00;2026-08-18 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-08-19 00:00:00;2026-08-19 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-08-22 00:00:00;2026-08-22 00:00:00;09:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-08-28 00:00:00;2026-08-28 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-08-31 00:00:00;2026-08-31 00:00:00;08:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-09-03 00:00:00;2026-09-03 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-09-05 00:00:00;2026-09-05 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-09-07 00:00:00;2026-09-07 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-09-08 00:00:00;2026-09-08 00:00:00;12:30:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-09-12 00:00:00;2026-09-12 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-09-12 00:00:00;2026-09-12 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-09-16 00:00:00;2026-09-16 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-09-17 00:00:00;2026-09-17 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-09-17 00:00:00;2026-09-17 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-09-18 00:00:00;2026-09-18 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-09-18 00:00:00;2026-09-18 00:00:00;10:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;5;corto plazo
+2026-09-20 00:00:00;2026-09-20 00:00:00;13:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-09-23 00:00:00;2026-09-23 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-09-27 00:00:00;2026-09-27 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-10-03 00:00:00;2026-10-03 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-10-03 00:00:00;2026-10-03 00:00:00;08:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-10-06 00:00:00;2026-10-06 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-10-07 00:00:00;2026-10-07 00:00:00;09:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-10-08 00:00:00;2026-10-08 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-10-09 00:00:00;2026-10-09 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-10-10 00:00:00;2026-10-10 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-10-15 00:00:00;2026-10-15 00:00:00;07:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-10-15 00:00:00;2026-10-15 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-10-15 00:00:00;2026-10-15 00:00:00;10:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-10-18 00:00:00;2026-10-18 00:00:00;07:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-10-18 00:00:00;2026-10-18 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-10-19 00:00:00;2026-10-19 00:00:00;09:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;5;corto plazo
+2026-10-21 00:00:00;2026-10-21 00:00:00;09:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-10-21 00:00:00;2026-10-21 00:00:00;12:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-10-22 00:00:00;2026-10-22 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-10-26 00:00:00;2026-10-26 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;5;corto plazo
+2026-10-27 00:00:00;2026-10-27 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-10-27 00:00:00;2026-10-27 00:00:00;07:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;4;corto plazo
+2026-10-30 00:00:00;2026-10-30 00:00:00;09:30:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-11-01 00:00:00;2026-11-01 00:00:00;09:30:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-11-03 00:00:00;2026-11-03 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-11-03 00:00:00;2026-11-03 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;2;corto plazo
+2026-11-04 00:00:00;2026-11-04 00:00:00;08:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-11-06 00:00:00;2026-11-06 00:00:00;10:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-11-12 00:00:00;2026-11-12 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-11-13 00:00:00;2026-11-13 00:00:00;10:00:00;Megacrucero;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;5;corto plazo
+2026-11-27 00:00:00;2026-11-27 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-11-28 00:00:00;2026-11-28 00:00:00;10:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-12-09 00:00:00;2026-12-09 00:00:00;07:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-12-10 00:00:00;2026-12-10 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2026-12-13 00:00:00;2026-12-13 00:00:00;12:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-12-20 00:00:00;2026-12-20 00:00:00;08:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-12-23 00:00:00;2026-12-23 00:00:00;12:00:00;Crucero grande;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;3;corto plazo
+2026-12-26 00:00:00;2026-12-26 00:00:00;09:00:00;Crucero pequeño;muelle levante dl, lonja dl, mercado dl, pza. montaÑeta, centro comercial gran vía, diputación dl, postiguet;1;corto plazo
+2025-07-04 00:00:00;2025-07-06 00:00:00;;Atasco-Operación Salida;Todos;4;corto plazo
+2024-06-28 00:00:00;2024-06-30 00:00:00;;Atasco-Operación Salida;Todos;4;corto plazo
+2023-06-30 00:00:00;2023-07-02 00:00:00;;Atasco-Operación Salida;Todos;4;corto plazo
+2022-07-01 00:00:00;2022-07-03 00:00:00;;Atasco-Operación Salida;Todos;4;corto plazo
+2022-06-20 00:00:00;2022-06-24 00:00:00;;Hogueras;Todos;5;corto plazo
+2023-06-20 00:00:00;2023-06-24 00:00:00;;Hogueras;Todos;5;corto plazo
+2024-06-20 00:00:00;2024-06-24 00:00:00;;Hogueras;Todos;5;corto plazo
+2025-06-20 00:00:00;2025-06-24 00:00:00;;Hogueras;Todos;5;corto plazo
+2022-04-02 00:00:00;2022-04-09 00:00:00;;Semana Santa;Todos;4;corto plazo
+2023-04-01 00:00:00;2023-04-08 00:00:00;;Semana Santa;Todos;4;corto plazo
+2024-04-02 00:00:00;2024-04-09 00:00:00;;Semana Santa;Todos;4;corto plazo
+2025-04-02 00:00:00;2025-04-09 00:00:00;;Semana Santa;Todos;4;corto plazo
+2022-04-02;2022-05-02;;Ramadán;virgen del remedio, colonia requena, bº los ángeles, campoamor alto, benalúa dl, altozano;3;corto plazo
+2023-03-23;2023-04-21;;Ramadán;virgen del remedio, colonia requena, bº los ángeles, campoamor alto, benalúa dl, altozano;3;corto plazo
+2024-03-11;2024-04-09;;Ramadán;virgen del remedio, colonia requena, bº los ángeles, campoamor alto, benalúa dl, altozano;3;corto plazo
+2025-03-01;2025-03-30;;Ramadán;virgen del remedio, colonia requena, bº los ángeles, campoamor alto, benalúa dl, altozano;3;corto plazo
+2022-07-07;2022-07-11;;Moros y Cristianos;Todos;4;corto plazo
+2023-07-06;2023-07-10;;Moros y Cristianos;Todos;4;corto plazo
+2024-07-18;2024-07-22;;Moros y Cristianos;Todos;4;corto plazo
+2025-07-10;2025-07-14;;Moros y Cristianos;Todos;4;corto plazo
+2025-07-01 00:00:00;2025-07-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2025-08-01 00:00:00;2025-08-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2025-09-01 00:00:00;2025-09-30 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2024-06-01 00:00:00;2024-06-30 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2024-07-01 00:00:00;2024-07-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2024-08-01 00:00:00;2024-08-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2023-07-01 00:00:00;2023-07-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2023-08-01 00:00:00;2023-08-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2022-07-01 00:00:00;2022-07-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2022-08-01 00:00:00;2022-08-31 00:00:00;;Turismo;playa de san juan 1, cabo huertas - playa, postiguet, muchavista - pau 5;5;corto plazo
+2022-11-23;2022-11-23;20:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2022-11-23;2022-11-23;20:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2022-11-27;2022-11-27;20:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2022-11-27;2022-11-27;20:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2022-12-06;2022-12-06;16:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2022-12-18;2022-12-18;16:00;final_importante;Todos;5;corto plazo
+2022-12-18;2022-12-18;16:00;final_importante;Todos;5;corto plazo
+2024-06-14;2024-06-14;21:00;partido_eurocopa;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2024-06-14;2024-06-14;21:00;partido_eurocopa;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2024-06-20;2024-06-20;21:00;partido_eurocopa;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2024-06-24;2024-06-24;21:00;partido_eurocopa;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2024-07-14;2024-07-14;21:00;final_importante;Todos;5;corto plazo
+2024-07-14;2024-07-14;21:00;final_importante;Todos;5;corto plazo
+2024-04-09;2024-04-09;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-04-09;2024-04-09;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-04-10;2024-04-10;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-04-16;2024-04-16;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-04-17;2024-04-17;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-05-07;2024-05-07;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-05-08;2024-05-08;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-06-01;2024-06-01;21:00;final_importante;Todos;5;corto plazo
+2024-06-01;2024-06-01;21:00;final_importante;Todos;5;corto plazo
+2023-03-12;2023-03-12;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2023-04-02;2023-04-02;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2023-05-14;2023-05-14;19:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2023-09-24;2023-09-24;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2023-10-15;2023-10-15;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2023-11-05;2023-11-05;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2023-12-03;2023-12-03;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-01-14;2024-01-14;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-02-11;2024-02-11;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-03-03;2024-03-03;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-04-21;2024-04-21;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2024-02-18;2024-02-18;09:00;evento_deportivo_local;Todos;3;corto plazo
+2024-03-10;2024-03-10;09:00;evento_deportivo_local;Todos;3;corto plazo
+2024-05-05;2024-05-05;09:00;evento_deportivo_local;Todos;3;corto plazo
+2026-03-10;2026-03-10;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-03-10;2026-03-10;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-03-11;2026-03-11;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-03-17;2026-03-17;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-03-18;2026-03-18;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-04-07;2026-04-07;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-04-08;2026-04-08;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-05-05;2026-05-05;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-05-06;2026-05-06;21:00;partido_champions;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-05-30;2026-05-30;21:00;final_importante;Todos;5;corto plazo
+2026-05-30;2026-05-30;21:00;final_importante;Todos;5;corto plazo
+2026-06-15;2026-06-15;21:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2026-06-15;2026-06-15;21:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2026-06-20;2026-06-20;21:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2026-06-25;2026-06-25;21:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2026-07-10;2026-07-10;21:00;partido_mundial;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;5;corto plazo
+2026-07-14;2026-07-14;21:00;final_importante;Todos;5;corto plazo
+2026-07-14;2026-07-14;21:00;final_importante;Todos;5;corto plazo
+2026-09-20;2026-09-20;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-10-04;2026-10-04;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-10-18;2026-10-18;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-11-01;2026-11-01;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-11-15;2026-11-15;18:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-12-06;2026-12-06;17:00;partido_local;campoamor alto, ciudad deportiva dl, mercado dl, centro comercial gran vía, altozano;4;corto plazo
+2026-02-15;2026-02-15;09:00;evento_deportivo_local;Todos;3;corto plazo
+2026-03-22;2026-03-22;09:00;evento_deportivo_local;Todos;3;corto plazo
+2026-04-12;2026-04-12;09:00;evento_deportivo_local;Todos;3;corto plazo
+2026-05-17;2026-05-17;09:00;evento_deportivo_local;Todos;3;corto plazo
+2026-06-07;2026-06-07;09:00;evento_deportivo_local;Todos;3;corto plazo
+2026-09-13;2026-09-13;09:00;evento_deportivo_local;Todos;3;corto plazo
+2022-05-15;2022-05-22;;ola_calor;Todos;4;corto plazo
+2022-06-10;2022-06-18;;ola_calor;Todos;5;corto plazo
+2022-07-09;2022-07-17;;ola_calor;Todos;5;corto plazo
+2022-08-02;2022-08-10;;ola_calor;Todos;5;corto plazo
+2022-01-01;2022-12-31;;episodio_sequia;Todos;4;corto plazo
+2023-04-25;2023-05-02;;temperatura_extrema;Todos;4;corto plazo
+2023-06-20;2023-06-30;;ola_calor;Todos;5;corto plazo
+2023-07-10;2023-07-20;;ola_calor;Todos;5;corto plazo
+2023-08-05;2023-08-15;;ola_calor;Todos;5;corto plazo
+2023-01-01;2023-12-31;;episodio_sequia;Todos;4;corto plazo
+2024-04-15;2024-04-22;;temperatura_extrema;Todos;3;corto plazo
+2024-06-15;2024-06-25;;ola_calor;Todos;5;corto plazo
+2024-07-05;2024-07-18;;ola_calor;Todos;5;corto plazo
+2024-08-01;2024-08-12;;ola_calor;Todos;5;corto plazo
+2024-01-01;2024-12-31;;episodio_sequia;Todos;4;corto plazo
+2022-09-12;2022-09-14;;lluvia_intensa;Todos;2;corto plazo
+2023-09-02;2023-09-05;;tormenta;Todos;2;corto plazo
+2024-03-01;2024-03-03;;lluvia_intensa;Todos;2;corto plazo
+2025-06-10;2025-06-20;;ola_calor;Todos;5;corto plazo
+2025-07-05;2025-07-18;;ola_calor;Todos;5;corto plazo
+2025-08-01;2025-08-15;;ola_calor;Todos;5;corto plazo
+2025-01-01;2025-12-31;;episodio_sequia;Todos;4;corto plazo
+2026-06-15;2026-06-25;;ola_calor;Todos;5;corto plazo
+2026-07-10;2026-07-22;;ola_calor;Todos;5;corto plazo
+2026-08-01;2026-08-14;;ola_calor;Todos;5;corto plazo
+2026-01-01;2026-12-31;;episodio_sequia;Todos;4;corto plazo
+2025-09-10;2025-09-13;;tormenta;Todos;2;corto plazo
+2026-03-05;2026-03-07;;lluvia_intensa;Todos;2;corto plazo
