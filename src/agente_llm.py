@@ -1,17 +1,11 @@
 """
-agente_llm.py — VERSIÓN CORREGIDA
-===================================
-Cambios respecto a la versión original:
-  1. _eventos_simulados() eliminado — ya NO inventa un partido del Hércules.
-     Ahora el fallback devuelve "Sin eventos confirmados hoy."
-  2. cargar_eventos_csv() — nueva función que lee el CSV real de AMAEM
-     (aguas_corregido_v2_Sheet1_.csv) y filtra los eventos del día actual.
-     El agente usa primero Ticketmaster, si falla usa el CSV, si falla devuelve vacío.
-  3. El prompt del LLM tiene rangos calibrados más estrictos:
-     - Día normal sin nada especial → todos los factores = 1.0
-     - Máximo factor individual en caso extremo → 1.50 (antes 2.50)
-     Esto evita que el LLM infle factores y genere falsos estrés.
-  4. API keys movidas a variables de entorno (sin fallback hardcodeado).
+agente_llm.py — Capa Sensorial de Contexto Sociológico (Zero-Shot Feature Extraction)
+=====================================================================================
+Módulo encargado de actuar como transductor de datos no estructurados en tiempo real.
+Mediante llamadas a APIs públicas (OSINT) y el uso de Inteligencia Artificial Generativa 
+(Llama-3 70B vía Groq), el sistema procesa el entorno social, climático y urbano de la ciudad,
+exportando un vector de tensores numéricos (factores de impacto) que el modelo de Machine 
+Learning utilizará para ajustar la predicción inercial de la red hídrica.
 """
 
 import requests
@@ -23,35 +17,39 @@ import json
 import os
 import pandas as pd
 
+# =============================================================================
+# ⚙️ CONFIGURACIÓN DE RUTAS Y ENTORNO
+# =============================================================================
+
+# El script se encuentra en /src, el BASE_DIR es la raíz del proyecto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RUTA_CSV_EVENTOS = os.path.join(BASE_DIR, "data", "raw", "aguas_corregido_v2_Sheet1_.csv")
+RUTA_OUTPUT_JSON = os.path.join(BASE_DIR, "outputs", "factores_hoy.json")
+
 def cargar_config(key_name):
-    # 1. Intento por Streamlit (Nube)
+    # 1. Resolución mediante Streamlit Secrets (Entorno Cloud)
     try:
         import streamlit as st
         if key_name in st.secrets:
             return st.secrets[key_name]
-    except:
+    except ImportError:
         pass
     
-    # 2. Intento por Variables de Entorno (Local/WinPython)
+    # 2. Resolución mediante Variables de Entorno (Entorno Local/Docker)
     return os.getenv(key_name, "")
 
-# Ahora las cargas así de limpio:
-API_KEY        = cargar_config("GROQ_API_KEY")
+API_KEY          = cargar_config("GROQ_API_KEY")
 TICKETMASTER_KEY = cargar_config("TICKETMASTER_KEY")
 MODELO           = "llama-3.3-70b-versatile"
-
-# Ruta al CSV de eventos reales de AMAEM (en la misma carpeta que este script)
-RUTA_CSV_EVENTOS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "aguas_corregido_v2_Sheet1_.csv")
 
 if API_KEY:
     cliente_ai = Groq(api_key=API_KEY)
 else:
-    print("⚠️  GROQ_API_KEY no configurada. Ejecutando en modo fallback (priors Python).")
+    print("⚠️ [FALLBACK] GROQ_API_KEY no detectada. El sistema operará en modo determinista (priors matemáticos).")
 
 
 # =============================================================================
-# 1. CLIMA
+# 1. MÓDULO CLIMÁTICO
 # =============================================================================
 
 def obtener_clima_alicante() -> dict:
@@ -86,16 +84,16 @@ def obtener_clima_alicante() -> dict:
             )
         }
     except Exception as e:
-        print(f"  [WARN] Clima: {e}")
+        print(f"  [WARN] Open-Meteo API: {e}")
         return {"temp_max":20,"temp_min":14,"lluvia_mm":0,"hora_pico_calor":15,
                 "horas_sobre_28c":0,"horas_sobre_32c":0,"sensacion_tarde":20,
-                "resumen":"Primavera tipica 20C (estimado)"}
+                "resumen":"Climatología base estimada."}
 
 def _resumir_clima(temp, lluvia):
-    if temp > 35:   return f"Ola de calor: {temp}C"
-    if temp > 30:   return f"Calor alto: {temp}C"
-    if lluvia > 10: return f"Lluvia intensa: {lluvia}mm, {temp}C"
-    if lluvia > 0:  return f"Lluvia leve: {lluvia}mm, {temp}C"
+    if temp > 35:   return f"Ola de calor extrema: {temp}C"
+    if temp > 30:   return f"Alerta térmica alta: {temp}C"
+    if lluvia > 10: return f"Precipitación intensa: {lluvia}mm, {temp}C"
+    if lluvia > 0:  return f"Precipitación leve: {lluvia}mm, {temp}C"
     return f"Despejado: {temp}C"
 
 def _sensacion_termica(temp, humedad, viento):
@@ -107,7 +105,7 @@ def _sensacion_termica(temp, humedad, viento):
 
 
 # =============================================================================
-# 2. CALENDARIO
+# 2. MÓDULO CALENDARIO Y CICLOS SOCIALES
 # =============================================================================
 
 def obtener_calendario() -> dict:
@@ -129,7 +127,7 @@ def obtener_calendario() -> dict:
             res['es_festivo'] = True
             res['nombre_festivo'] = f.get('localName', f.get('name'))
     except Exception as e:
-        print(f"  [WARN] Festivos: {e}")
+        print(f"  [WARN] Festivos API: {e}")
     return res
 
 def _es_ramadan(fecha):
@@ -140,12 +138,12 @@ def _es_ramadan(fecha):
 
 def _estado_escolar(fecha):
     m, d = fecha.month, fecha.day
-    vac, per = False, "Curso escolar"
-    if (m==6 and d>=15) or m in [7,8] or (m==9 and d<=10): vac, per = True, "Verano escolar"
-    elif (m==12 and d>=23) or (m==1 and d<=7):              vac, per = True, "Vacaciones Navidad"
+    vac, per = False, "Ciclo lectivo ordinario"
+    if (m==6 and d>=15) or m in [7,8] or (m==9 and d<=10): vac, per = True, "Periodo estival escolar"
+    elif (m==12 and d>=23) or (m==1 and d<=7):              vac, per = True, "Receso invernal"
     elif _es_semana_santa(fecha):                            vac, per = True, "Semana Santa"
-    patron = ("Pico matutino retrasado 9h-10h." if vac else
-              "Pico matutino 7h-8h30." if fecha.weekday()<5 else "Fin de semana.")
+    patron = ("Demanda matutina retrasada (09:00-10:00)." if vac else
+              "Pico matutino estándar (07:00-08:30)." if fecha.weekday()<5 else "Patrón de fin de semana.")
     return {"es_vacaciones": vac, "periodo": per, "patron": patron}
 
 def _es_semana_santa(fecha):
@@ -161,31 +159,31 @@ def _es_semana_santa(fecha):
 
 def _perfil_dia(fecha):
     p={
-        0:{"nombre":"Lunes",    "f_man":1.10,"f_tar":0.95,"f_noc":0.90,"nota":"Lavadoras post-finde."},
-        1:{"nombre":"Martes",   "f_man":1.00,"f_tar":1.00,"f_noc":0.95,"nota":"Dia estandar."},
-        2:{"nombre":"Miercoles","f_man":1.00,"f_tar":1.00,"f_noc":0.95,"nota":"Patron normal."},
-        3:{"nombre":"Jueves",   "f_man":1.00,"f_tar":1.02,"f_noc":1.02,"nota":"Pre-finde."},
-        4:{"nombre":"Viernes",  "f_man":1.00,"f_tar":1.05,"f_noc":1.10,"nota":"Tarde-noche ocio."},
-        5:{"nombre":"Sabado",   "f_man":0.90,"f_tar":1.10,"f_noc":1.15,"nota":"Limpieza, piscinas."},
-        6:{"nombre":"Domingo",  "f_man":0.85,"f_tar":1.15,"f_noc":0.90,"nota":"Paellas 12h-15h."},
+        0:{"nombre":"Lunes",    "f_man":1.10,"f_tar":0.95,"f_noc":0.90,"nota":"Ajuste inercial post-fin de semana."},
+        1:{"nombre":"Martes",   "f_man":1.00,"f_tar":1.00,"f_noc":0.95,"nota":"Día laborable estándar."},
+        2:{"nombre":"Miercoles","f_man":1.00,"f_tar":1.00,"f_noc":0.95,"nota":"Día laborable estándar."},
+        3:{"nombre":"Jueves",   "f_man":1.00,"f_tar":1.02,"f_noc":1.02,"nota":"Incremento leve ocio nocturno."},
+        4:{"nombre":"Viernes",  "f_man":1.00,"f_tar":1.05,"f_noc":1.10,"nota":"Tarde-noche con alta movilidad."},
+        5:{"nombre":"Sabado",   "f_man":0.90,"f_tar":1.10,"f_noc":1.15,"nota":"Actividad residencial y ocio intenso."},
+        6:{"nombre":"Domingo",  "f_man":0.85,"f_tar":1.15,"f_noc":0.90,"nota":"Pico de demanda en mediodía."},
     }[fecha.weekday()]
     return {"nombre":p["nombre"],"f_manana":p["f_man"],"f_tarde":p["f_tar"],
             "f_noche":p["f_noc"],"nota":p["nota"]}
 
 
 # =============================================================================
-# 3. FIESTAS LOCALES ALICANTE
+# 3. FESTIVIDADES LOCALES Y REGIONALES
 # =============================================================================
 
 FIESTAS_ALICANTE = [
-    (6,20,24,"Hogueras de San Juan",1.30,"Masiva afluencia. Pico agua noche."),
-    (6,23,23,"Noche de la Crema",   1.40,"+100.000 personas. Noche mas intensa."),
-    (6,17,19,"Pre-Hogueras",        1.10,"Ambiente festivo. Barracas abiertas."),
-    (12,25,26,"Navidad",            0.80,"Residencial alto, comercios cerrados."),
-    (12,31,31,"Nochevieja",         1.20,"Concentracion masiva zona centro."),
-    (1,1,1,"Ano Nuevo",             0.75,"Dia baja actividad."),
-    (3,19,19,"San Jose",            0.95,"Festivo autonomico."),
-    (8,1,8,"Moros y Cristianos",    1.10,"Afluencia regional zona norte."),
+    (6,20,24,"Hogueras de San Juan",1.30,"Afluencia masiva regional. Pico hídrico nocturno."),
+    (6,23,23,"Noche de la Crema",   1.40,"Pico máximo de turismo. Estrés en red de abastecimiento."),
+    (6,17,19,"Pre-Hogueras",        1.10,"Incremento progresivo de ocupación."),
+    (12,25,26,"Navidad",            0.80,"Concentración residencial. Actividad comercial nula."),
+    (12,31,31,"Nochevieja",         1.20,"Concentración urbana masiva zona centro."),
+    (1,1,1,"Ano Nuevo",             0.75,"Actividad hídrica mínima (valle generalizado)."),
+    (3,19,19,"San Jose",            0.95,"Festivo autonómico."),
+    (8,1,8,"Moros y Cristianos",    1.10,"Impacto localizado en zona metropolitana norte."),
 ]
 
 def obtener_fiestas_alicante() -> dict:
@@ -199,10 +197,10 @@ def obtener_fiestas_alicante() -> dict:
     return {
         "fiesta_hoy": fh, "fiesta_manana": fm, "es_semana_hogueras": hogueras,
         "resumen": (
-            f"FIESTA HOY: {fh['nombre']} (x{fh['factor']}) — {fh['detalle']}" if fh else
-            f"FIESTA MANANA: {fm['nombre']}" if fm else
-            "SEMANA HOGUERAS: Ambiente festivo general" if hogueras else
-            "Sin fiestas locales destacadas."
+            f"FIESTA ACTIVA HOY: {fh['nombre']} (Multiplicador base: x{fh['factor']}) — {fh['detalle']}" if fh else
+            f"FIESTA PROYECTADA MAÑANA: {fm['nombre']}" if fm else
+            "SEMANA HOGUERAS: Actividad festiva en progreso." if hogueras else
+            "Sin festividades locales detectadas."
         )
     }
 
@@ -220,14 +218,14 @@ def obtener_calidad_aire() -> dict:
         ).json()
         polvo = r['current']['dust']
         return {"polvo_ug_m3":polvo,"alerta_calima":polvo>50,
-                "resumen":f"CALIMA: {polvo} ug/m3" if polvo>50 else "Aire limpio"}
+                "resumen":f"ALERTA CALIMA: {polvo} ug/m3 detectados." if polvo>50 else "Parámetros de calidad del aire normales."}
     except Exception as e:
-        print(f"  [WARN] Aire: {e}")
-        return {"polvo_ug_m3":0,"alerta_calima":False,"resumen":"Normal (estimado)"}
+        print(f"  [WARN] Air Quality API: {e}")
+        return {"polvo_ug_m3":0,"alerta_calima":False,"resumen":"Parámetros estimados (normalidad)."}
 
 
 # =============================================================================
-# 5. CRUCEROS — Puerto de Alicante
+# 5. MÓDULO MARÍTIMO (Cruceros en Puerto de Alicante)
 # =============================================================================
 
 def obtener_cruceros_alicante() -> dict:
@@ -244,21 +242,22 @@ def obtener_cruceros_alicante() -> dict:
                 nombre = celdas[1].get_text(strip=True)
                 cruceros_hoy.append({"barco":nombre,"pasajeros_est":_est_pax(nombre)})
         total = sum(c["pasajeros_est"] for c in cruceros_hoy)
-        # FIX: factor más conservador (antes llegaba a 1.35 con apenas 3500 pax)
+        
+        # Calibración estricta de impacto en el suministro del puerto
         factor = round(min(1.0 + (total / 15000) * 0.25, 1.25), 2)
         return {
             "cruceros_hoy": cruceros_hoy, "num_cruceros": len(cruceros_hoy),
             "pasajeros_totales": total, "factor_impacto": factor,
             "resumen": (
-                f"{len(cruceros_hoy)} crucero(s) — ~{total:,} pax extra en centro."
-                if cruceros_hoy else "Sin cruceros en puerto hoy."
+                f"OPERATIVA PORTUARIA: {len(cruceros_hoy)} embarcaciones detectadas. "
+                f"Volumen estimado de pasajeros flotantes: ~{total:,}."
+                if cruceros_hoy else "Ausencia de tráfico de cruceros detectado en el puerto."
             )
         }
     except Exception as e:
-        print(f"  [WARN] Cruceros: {e}")
-        # FIX: fallback neutro, sin inventar cruceros
+        print(f"  [WARN] Módulo Marítimo: {e}")
         return {"cruceros_hoy":[],"num_cruceros":0,"pasajeros_totales":0,
-                "factor_impacto":1.0,"resumen":"Sin cruceros confirmados hoy."}
+                "factor_impacto":1.0,"resumen":"Sin confirmación de tráfico portuario turístico."}
 
 def _est_pax(nombre):
     n = nombre.lower()
@@ -268,7 +267,7 @@ def _est_pax(nombre):
 
 
 # =============================================================================
-# 6. VUELOS
+# 6. MÓDULO TRÁFICO AÉREO (OpenSky Network)
 # =============================================================================
 
 def obtener_vuelos_alicante() -> dict:
@@ -282,7 +281,8 @@ def obtener_vuelos_alicante() -> dict:
         aterrizando  = [s for s in estados if s[11] and s[11]<-2 and s[5] and s[5]<1500]
         aproximacion = [s for s in estados if s[5] and s[5]<3000 and s[9] and s[9]<300]
         mes = datetime.now().month
-        # FIX: factor estacional más conservador
+        
+        # Factor estacional ponderado
         factor_est = 1.20 if mes in [7,8] else 1.10 if mes in [6,9] else 1.0
         return {
             "vuelos_aterrizando": len(aterrizando),
@@ -290,31 +290,27 @@ def obtener_vuelos_alicante() -> dict:
             "pasajeros_est_hora": len(aproximacion)*150,
             "factor_estacional": factor_est,
             "resumen": (
-                f"{len(aterrizando)} aterrizando | {len(aproximacion)} en aprox. "
-                f"(~{len(aproximacion)*150} pax/h) | Factor estacional x{factor_est}"
+                f"TRÁFICO AÉREO (ALC): {len(aterrizando)} arribos en tiempo real | {len(aproximacion)} en vector de aproximación. "
+                f"(Flujo estimado: ~{len(aproximacion)*150} pax/h) | Multiplicador estacional: x{factor_est}"
             )
         }
     except Exception as e:
-        print(f"  [WARN] OpenSky: {e}")
+        print(f"  [WARN] OpenSky API: {e}")
         mes = datetime.now().month
         factor = 1.20 if mes in [7,8] else 1.10 if mes in [6,9] else 1.0
         return {"vuelos_aterrizando":0,"vuelos_aproximacion":0,"pasajeros_est_hora":0,
-                "factor_estacional":factor,"resumen":f"Factor estacional x{factor} (mes {mes})"}
+                "factor_estacional":factor,"resumen":f"Multiplicador estacional aplicado: x{factor} (Mes: {mes})"}
 
 
 # =============================================================================
-# 7. EVENTOS — CSV real de AMAEM + Ticketmaster como enriquecimiento
+# 7. EVENTOS MULTITUDINARIOS (Integración AMAEM + Ticketmaster)
 # =============================================================================
 
 def cargar_eventos_csv_hoy() -> list[dict]:
-    """
-    FIX PRINCIPAL: Lee el CSV real de eventos de AMAEM y filtra los de hoy.
-    Este CSV tiene datos reales de cruceros, Hogueras, Ramadán, partidos mundiales, etc.
-    Sustituye al _eventos_simulados() que inventaba un partido del Hércules.
-    """
+    """Ingesta del registro oficial de eventos AMAEM."""
     eventos_hoy = []
     if not os.path.exists(RUTA_CSV_EVENTOS):
-        print(f"  [WARN] CSV eventos no encontrado en: {RUTA_CSV_EVENTOS}")
+        print(f"  [WARN] Repositorio de eventos no localizado en: {RUTA_CSV_EVENTOS}")
         return []
 
     try:
@@ -324,7 +320,6 @@ def cargar_eventos_csv_hoy() -> list[dict]:
 
         hoy = datetime.now().date()
 
-        # Un evento aplica hoy si hoy está en el rango [FECHA_INICIO, FECHA_FIN]
         mask = (df['FECHA_INICIO'].dt.date <= hoy) & (df['FECHA_FIN'].dt.date >= hoy)
         df_hoy = df[mask].copy()
 
@@ -336,21 +331,20 @@ def cargar_eventos_csv_hoy() -> list[dict]:
                 "aforo":   _aforo_desde_impacto(row['IMPACTO']),
                 "zona":    _zona_desde_barrio(str(row['BARRIO_AFECTADO'])),
                 "impacto": int(row['IMPACTO']),
-                "fuente":  "CSV_AMAEM",
+                "fuente":  "Registro AMAEM",
             })
 
         if eventos_hoy:
-            print(f"  [CSV] {len(eventos_hoy)} evento(s) encontrado(s) para hoy en el CSV de AMAEM.")
+            print(f"  [DATA] Registrados {len(eventos_hoy)} evento(s) confirmados para la jornada de hoy.")
         else:
-            print("  [CSV] Sin eventos en el CSV para la fecha de hoy.")
+            print("  [DATA] Ausencia de eventos programados para la jornada de hoy.")
 
     except Exception as e:
-        print(f"  [WARN] Error leyendo CSV eventos: {e}")
+        print(f"  [WARN] Error de ingesta CSV Eventos: {e}")
 
     return eventos_hoy
 
 def _aforo_desde_impacto(impacto):
-    """Convierte la escala de impacto del CSV (1-5) a aforo estimado."""
     tabla = {1: 500, 2: 2000, 3: 5000, 4: 10000, 5: 50000}
     return tabla.get(int(impacto), 1000)
 
@@ -363,11 +357,7 @@ def _zona_desde_barrio(barrio_str: str) -> str:
     return "centro"
 
 def obtener_eventos_ticketmaster() -> dict:
-    """
-    Intenta Ticketmaster. Si falla, usa el CSV de AMAEM como fuente de verdad.
-    FIX: eliminado _eventos_simulados() que inventaba partido del Hércules.
-    """
-    # 1. Intentar Ticketmaster si hay key
+    """Enriquecimiento de eventos mediante API externa, con fallback al registro oficial."""
     if TICKETMASTER_KEY:
         try:
             hoy = datetime.now()
@@ -389,7 +379,7 @@ def obtener_eventos_ticketmaster() -> dict:
                 zona   = _zona_venue_tm(venue)
                 eventos.append({"nombre":nombre,"venue":venue,"hora":hora,
                                  "aforo":aforo,"zona":zona,"fuente":"Ticketmaster"})
-            # Enriquecer con CSV de AMAEM
+                
             eventos_csv = cargar_eventos_csv_hoy()
             eventos_csv_no_dup = [e for e in eventos_csv
                                   if not any(e['nombre'].lower() in ev['nombre'].lower()
@@ -399,23 +389,22 @@ def obtener_eventos_ticketmaster() -> dict:
             return {
                 "eventos_hoy": eventos, "num_eventos": len(eventos), "factor_evento": factor,
                 "resumen": (
-                    " | ".join([f"{e['nombre']} ({e['hora']}, ~{e['aforo']} asist., zona {e['zona']})"
+                    " | ".join([f"{e['nombre']} ({e['hora']}, Aforo Est.: ~{e['aforo']}, Zona: {e['zona']})"
                                 for e in eventos])
-                    if eventos else "Sin eventos confirmados hoy en Alicante."
+                    if eventos else "Registro de eventos vacío en el municipio."
                 )
             }
         except Exception as e:
-            print(f"  [WARN] Ticketmaster: {e} — usando CSV AMAEM")
+            print(f"  [WARN] Ticketmaster API: {e} — Transicionando a fuente de datos estática.")
 
-    # 2. Fallback: solo CSV de AMAEM
     eventos_csv = cargar_eventos_csv_hoy()
     factor = round(min(1.0 + sum(e['aforo'] for e in eventos_csv)/20000*0.10, 1.25), 2)
     return {
         "eventos_hoy": eventos_csv, "num_eventos": len(eventos_csv), "factor_evento": factor,
         "resumen": (
-            " | ".join([f"{e['nombre']} ({e['hora']}, zona {e['zona']}, impacto {e['impacto']}/5)"
+            " | ".join([f"{e['nombre']} ({e['hora']}, Zona: {e['zona']}, Índice Impacto: {e['impacto']}/5)"
                         for e in eventos_csv])
-            if eventos_csv else "Sin eventos confirmados hoy en Alicante."
+            if eventos_csv else "Registro de eventos vacío en el municipio."
         )
     }
 
@@ -435,7 +424,7 @@ def _zona_venue_tm(venue):
 
 
 # =============================================================================
-# 8. MOVILIDAD MITMA
+# 8. MÓDULO MOVILIDAD (MITMA)
 # =============================================================================
 
 def obtener_movilidad_mitma() -> dict:
@@ -450,15 +439,14 @@ def obtener_movilidad_mitma() -> dict:
         return {
             "indice_movilidad": indice, "variacion_mensual": variacion,
             "factor_movilidad": factor,
-            "resumen": f"Indice movilidad Alicante: {indice} ({variacion:+.1f}%). Factor x{factor}"
+            "resumen": f"Índice de Movilidad Activa (MITMA): {indice} ({variacion:+.1f}% intermensual). Multiplicador x{factor}"
         }
     except Exception as e:
-        print(f"  [WARN] MITMA API: {e} — usando estimacion estacional")
+        print(f"  [WARN] MITMA API: {e} — Utilizando calibración estacional.")
         return _movilidad_estacional()
 
 def _movilidad_estacional() -> dict:
     mes = datetime.now().month
-    # FIX: índices más conservadores (antes abril=95 llegaba a x0.95, ahora es neutro)
     indice_por_mes = {
         1:88, 2:90, 3:95, 4:100, 5:102,
         6:108, 7:130, 8:140, 9:115, 10:100,
@@ -468,12 +456,12 @@ def _movilidad_estacional() -> dict:
     factor = round(indice / 100, 2)
     return {
         "indice_movilidad": indice, "variacion_mensual": 0, "factor_movilidad": factor,
-        "resumen": f"Movilidad estimada {indice}/100 (mes {mes}). Factor x{factor}."
+        "resumen": f"Estimación inercial de movilidad: {indice}/100. Multiplicador ponderado: x{factor}."
     }
 
 
 # =============================================================================
-# 9. OBRAS
+# 9. INFRAESTRUCTURAS Y OBRAS
 # =============================================================================
 
 def obtener_obras_alicante() -> dict:
@@ -490,7 +478,7 @@ def obtener_obras_alicante() -> dict:
             if "activ" in estado or "en curso" in estado or "concedid" in estado:
                 zona = _detectar_zona_obra(str(obra.get("direccion","") + obra.get("zona","")))
                 obras_activas.append({
-                    "descripcion": obra.get("descripcion", "Obra mayor"),
+                    "descripcion": obra.get("descripcion", "Intervención infraestructural"),
                     "direccion":   obra.get("direccion", ""),
                     "zona":        zona, "estado": obra.get("estado",""),
                 })
@@ -499,14 +487,14 @@ def obtener_obras_alicante() -> dict:
             "obras_activas": obras_activas[:5], "total_obras": len(obras_activas),
             "factor_obras": factor,
             "resumen": (
-                f"{len(obras_activas)} obras mayores activas. Factor x{factor}."
-                if obras_activas else "Sin datos de obras activas."
+                f"INTERVENCIONES VÍA PÚBLICA: {len(obras_activas)} obras mayores detectadas. Factor de riesgo: x{factor}."
+                if obras_activas else "Ausencia de alteraciones reportadas en vía pública."
             )
         }
     except Exception as e:
-        print(f"  [WARN] Obras: {e}")
+        print(f"  [WARN] OpenData Obras: {e}")
         return {"obras_activas":[],"total_obras":0,"factor_obras":1.0,
-                "resumen":"Datos de obras no disponibles."}
+                "resumen":"Telemetría de obras temporalmente no disponible."}
 
 def _detectar_zona_obra(texto: str) -> str:
     t = texto.lower()
@@ -516,7 +504,7 @@ def _detectar_zona_obra(texto: str) -> str:
 
 
 # =============================================================================
-# 10. INE — Ocupación hotelera
+# 10. MÓDULO TURÍSTICO (INE)
 # =============================================================================
 
 def obtener_ocupacion_hotelera_ine() -> dict:
@@ -524,7 +512,7 @@ def obtener_ocupacion_hotelera_ine() -> dict:
         url = "https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/IH9009?nult=13"
         r   = requests.get(url, timeout=8).json()
         datos_serie = r.get("Data", [])
-        if not datos_serie: raise ValueError("Serie INE vacia")
+        if not datos_serie: raise ValueError("Respuesta estructuralmente vacía.")
         ultimo      = datos_serie[-1]
         anterior    = datos_serie[-2] if len(datos_serie) > 1 else ultimo
         mismo_mes_anterior_anio = datos_serie[-13] if len(datos_serie) >= 13 else ultimo
@@ -543,17 +531,16 @@ def obtener_ocupacion_hotelera_ine() -> dict:
             "factor_ocupacion": factor,
             "periodo": ultimo.get("NombrePeriodo", ""),
             "resumen": (
-                f"INE EOH: {int(viajeros_ultimo):,} viajeros "
-                f"({variacion_mensual:+.1f}% vs mes ant). Factor x{factor}"
+                f"REPORTE INE (EOH): {int(viajeros_ultimo):,} pernóctas registradas "
+                f"({variacion_mensual:+.1f}% vs periodo anterior). Multiplicador x{factor}"
             )
         }
     except Exception as e:
-        print(f"  [WARN] INE EOH: {e} — estimacion estacional")
+        print(f"  [WARN] INE EOH: {e} — Utilizando calibración estacional.")
         return _ocupacion_estacional()
 
 def _ocupacion_estacional() -> dict:
     mes = datetime.now().month
-    # FIX: factores más conservadores
     ocupacion_mes = {
         1:60, 2:63, 3:70, 4:80, 5:85,
         6:92, 7:115, 8:125, 9:105, 10:85,
@@ -563,13 +550,13 @@ def _ocupacion_estacional() -> dict:
     factor = round(ocup / 100, 2)
     return {
         "viajeros_ultimo_mes": 0, "variacion_mensual_pct": 0, "variacion_anual_pct": 0,
-        "factor_ocupacion": factor, "periodo": f"Estimacion mes {mes}",
-        "resumen": f"Ocupacion hotelera estimada: {ocup}/100 (mes {mes}). Factor x{factor}."
+        "factor_ocupacion": factor, "periodo": f"Inferencia mes {mes}",
+        "resumen": f"Carga hotelera estimada: {ocup}/100. Multiplicador ponderado: x{factor}."
     }
 
 
 # =============================================================================
-# 11. REDES SOCIALES Y NOTICIAS
+# 11. INTELIGENCIA DE FUENTES ABIERTAS (OSINT)
 # =============================================================================
 
 def escuchar_redes_sociales() -> str:
@@ -587,53 +574,55 @@ def escuchar_redes_sociales() -> str:
             titulares = [i.find('title').text for i in root.findall('./channel/item')[:3]
                          if i.find('title') is not None and i.find('title').text]
             if titulares:
-                fragmentos.append(f"RSS NOTICIAS: {' | '.join(titulares)}")
+                fragmentos.append(f"PRENSA LOCAL (RSS): {' | '.join(titulares)}")
                 break
         except Exception as e:
             print(f"  [WARN] RSS {nombre}: {e}")
 
     if not any('RSS' in f for f in fragmentos):
-        fragmentos.append("RSS NOTICIAS: No disponible.")
+        fragmentos.append("PRENSA LOCAL: Flujo de datos temporalmente inactivo.")
 
     try:
         r = requests.get("https://www.reddit.com/r/alicante/new.json?limit=10",
-                         headers={'User-Agent':'HackathonAguasAlicante/1.0'}, timeout=5).json()
+                         headers={'User-Agent':'AquaAlert-Bot/1.0'}, timeout=5).json()
         kw = ['agua','calor','corte','averia','inundacion','sequia','lluvia','heat','water']
         rel = [p['data']['title'] for p in r['data']['children']
                if any(w in p['data']['title'].lower() for w in kw)]
-        fragmentos.append(f"REDDIT: {' | '.join(rel[:3])}" if rel else "REDDIT: Sin posts relevantes.")
+        fragmentos.append(f"FOROS COMUNITARIOS (Reddit): {' | '.join(rel[:3])}" if rel else "FOROS COMUNITARIOS: Ausencia de palabras clave críticas.")
     except Exception as e:
-        print(f"  [WARN] Reddit: {e}")
-        fragmentos.append("REDDIT: Sin anomalias.")
+        print(f"  [WARN] API Comunitaria: {e}")
+        fragmentos.append("FOROS COMUNITARIOS: Estado nominal. Sin anomalías.")
 
     return "\n".join(fragmentos)
 
 
 # =============================================================================
-# PERFIL CIUDAD
+# TOPOLOGÍA URBANA
 # =============================================================================
 
 PERFIL_CIUDAD = """
-ZONA NORTE (Virgen del Remedio, Carolinas):
-  - 85.000 hab. 30% musulmana. Ramadan: pico nocturno 1h-4h (+35% consumo).
-  - Estadio Rico Perez: partidos = pico brusco al descanso y post-partido.
+ZONA NORTE (Sectores Virgen del Remedio, Carolinas):
+  - Demografía: 85.000 hab. Alta densidad. Minorías significativas (30%).
+  - Patrón Ramadán: Alteración drástica del ciclo. Incremento nocturno (01:00-04:00h) estimado en +35%.
+  - Infraestructura: Estadio Rico Pérez. Eventos deportivos generan picos instantáneos al descanso y desalojo.
 
 ZONA CENTRO (Rambla, Casco Antiguo, Mercado):
-  - Turismo intenso. Cruceros atracan en muelle adyacente (+1.500-5.000 pax).
-  - Hogueras, conciertos, ferias = +20-40%.
+  - Economía: Dominancia del sector servicios y turismo de tránsito.
+  - Flujo portuario: Capacidad de inyección de +1.500-5.000 pax flotantes por buque atracado.
+  - Eventos: Epicentro de celebraciones mayores (Hogueras) con variaciones térmicas interanuales de +20-40%.
 
-PLAYA SAN JUAN:
-  - Residencial alto + turismo veraniego. Muchas piscinas privadas.
-  - Julio-agosto: demanda x2.0 vs media anual. Aeropuerto a 10km.
+PLAYA DE SAN JUAN (Sectores costeros):
+  - Economía: Alta estacionalidad. Alta densidad de instalaciones recreativas (piscinas).
+  - Comportamiento: Sensibilidad extrema a variaciones térmicas prolongadas. Demanda pico x2.0 en periodo estival.
 """
 
 
 # =============================================================================
-# 12. LLM -> FACTORES PARA ML
+# 12. MOTOR DE INFERENCIA LLM (Generación de Tensores)
 # =============================================================================
 
 def generar_factores_llm() -> tuple[dict, dict]:
-    print("  Recopilando datos en tiempo real...")
+    print("  Inicializando orquestación de datos y extracción de características en tiempo real...")
 
     clima      = obtener_clima_alicante()
     calendario = obtener_calendario()
@@ -657,7 +646,7 @@ def generar_factores_llm() -> tuple[dict, dict]:
     perfil  = calendario['perfil_dia']
     escolar = calendario['escolar']
 
-    # Priors calculados desde Python (el LLM solo ajusta si hay justificación real)
+    # Priors determinísticos (Base line para la Reductancia del LLM)
     priors = {
         "factor_cruceros":           cruceros['factor_impacto'],
         "factor_obras_construccion": obras['factor_obras'],
@@ -671,54 +660,53 @@ def generar_factores_llm() -> tuple[dict, dict]:
     }
 
     prompt = f"""
-Eres un motor de prediccion de demanda hidrica para Aguas de Alicante.
-Tu UNICA tarea: devolver multiplicadores numericos como JSON puro.
+Operas como el motor de análisis heurístico para la red de abastecimiento hídrico de la ciudad de Alicante.
+Objetivo Funcional: Extraer y clasificar variables del entorno para generar tensores multiplicativos.
+Formato de Salida: ESTRUCTURA JSON ESTRICTA.
 
-=== DATOS CAPTURADOS ===
+=== TELEMETRÍA DE ENTRADA (OSINT) ===
 
-CLIMA: {clima['resumen']}
-  Horas >28C: {clima['horas_sobre_28c']}h | Horas >32C: {clima['horas_sobre_32c']}h
-  Sensacion termica tarde: {clima['sensacion_tarde']}C | Lluvia: {clima['lluvia_mm']}mm
+CLIMATOLOGÍA: {clima['resumen']}
+  Cargas térmicas >28C: {clima['horas_sobre_28c']}h | Cargas críticas >32C: {clima['horas_sobre_32c']}h
+  Sensación térmica pico (PM): {clima['sensacion_tarde']}C | Precipitación acumulada: {clima['lluvia_mm']}mm
 
-CALENDARIO: {calendario['fecha']} ({calendario['dia_semana']})
-  Festivo: {calendario['es_festivo']} ({calendario['nombre_festivo']})
-  Ramadan: {calendario['es_ramadan']} | Escolar: {escolar['periodo']} (vacaciones: {escolar['es_vacaciones']})
-  Perfil {perfil['nombre']}: manana x{perfil['f_manana']} / tarde x{perfil['f_tarde']} / noche x{perfil['f_noche']}
+CICLOS SOCIALES: {calendario['fecha']} ({calendario['dia_semana']})
+  Estatus Festivo: {calendario['es_festivo']} ({calendario['nombre_festivo']})
+  Ramadán en curso: {calendario['es_ramadan']} | Ciclo Lectivo: {escolar['periodo']} (Vacaciones activas: {escolar['es_vacaciones']})
+  Perfil inercial ({perfil['nombre']}): AM x{perfil['f_manana']} / PM x{perfil['f_tarde']} / NOCHE x{perfil['f_noche']}
 
-FIESTAS LOCALES: {fiestas['resumen']}
-CRUCEROS: {cruceros['resumen']} | Prior calculado: x{cruceros['factor_impacto']}
-VUELOS: {vuelos['resumen']} | Prior estacional: x{vuelos['factor_estacional']}
-EVENTOS HOY (fuentes verificadas): {eventos['resumen']}
-MOVILIDAD: {movilidad['resumen']}
-OBRAS ACTIVAS: {obras['resumen']} | Prior calculado: x{obras['factor_obras']}
-OCUPACION HOTELERA: {hotelero['resumen']}
-CALIDAD AIRE: {aire['resumen']}
-OSINT SOCIAL: {social}
+FESTIVIDADES: {fiestas['resumen']}
+OPERATIVA PORTUARIA: {cruceros['resumen']} | Peso matemático: x{cruceros['factor_impacto']}
+TRÁFICO AÉREO: {vuelos['resumen']} | Peso matemático: x{vuelos['factor_estacional']}
+EVENTOS EN LA URBE: {eventos['resumen']}
+ÍNDICE DE MOVILIDAD: {movilidad['resumen']}
+OBRAS Y ALTERACIONES: {obras['resumen']} | Peso matemático: x{obras['factor_obras']}
+DENSIDAD HOTELERA: {hotelero['resumen']}
+PARTÍCULAS EN SUSPENSIÓN (PM): {aire['resumen']}
+SEÑALES SOCIALES (OSINT): {social}
 
-PERFIL CIUDAD: {PERFIL_CIUDAD}
+TOPOLOGÍA URBANA Y CONTEXTO ESPACIAL: {PERFIL_CIUDAD}
 
-=== PRIORS CALCULADOS POR PYTHON ===
-Estos valores estan calculados matematicamente. Usaos como base y ajustalos
-SOLO si los datos narrativos justifican claramente una desviacion:
+=== PRIORS MATEMÁTICOS ===
+Los siguientes valores actúan como la predicción base algorítmica. 
+Su modificación mediante el modelo generativo solo está autorizada bajo justificación explícita en los datos narrativos.
 {json.dumps(priors, indent=2)}
 
-=== REGLAS CRITICAS DE CALIBRACION ===
-⚠️  IMPORTANTE: Los factores NO se multiplican entre si — se combinan como media ponderada.
-Por tanto, un factor de 1.20 ya es un ajuste importante (representa +20% en esa variable).
-- Dia laborable normal sin eventos = TODOS los factores = 1.0
-- Solo superar 1.20 si hay evidencia SOLIDA (evento masivo confirmado, ola de calor real)
-- Solo superar 1.35 para eventos EXCEPCIONALES (Hogueras, ola extrema >37C, megacrucero)
-- Maximo absoluto por factor individual: 1.50 (antes era 2.50 — era un error de calibracion)
+=== REGLAS DE DOMINIO Y CLIPPING DE SEGURIDAD ===
+- La combinación de factores se aplica de manera ponderada en el motor XGBoost, no de forma secuencial.
+- Jornada ordinaria sin desviaciones: factor = 1.00.
+- Límite operacional estricto: Desviaciones > 1.20 requieren validación cruzada con eventos físicos extremos.
+- Rango absoluto de saturación del tensor: [0.70, 1.50].
 
-=== REGLAS DE APLICACION ===
-- factor_cruceros          -> SOLO ZONA_CENTRO
-- factor_ramadan_nocturno  -> SOLO ZONA_NORTE + franja NOCHE
-- factor_calor_acumulado   -> PLAYA_SAN_JUAN y franja TARDE
-- factor_zona_norte        -> Solo si hay evento confirmado en Estadio Rico Perez HOY
-- factor_eventos           -> Segun zona del venue real (no inventado)
-- factor_global            -> Solo para festivos nacionales o fenomenos que afectan toda la ciudad
+=== REGLAS DE ENRUTAMIENTO ESPACIAL ===
+- factor_cruceros          -> Enrutamiento restringido a ZONA_CENTRO.
+- factor_ramadan_nocturno  -> Enrutamiento restringido a ZONA_NORTE, intervalo NOCHE.
+- factor_calor_acumulado   -> Ponderación agravada en PLAYA_SAN_JUAN, intervalo TARDE.
+- factor_zona_norte        -> Condicional a la detección de eventos en "Estadio Rico Pérez".
+- factor_eventos           -> Localización geográfica según variable "zona" extraída del venue.
+- factor_global            -> Impacto distribuido. Uso exclusivo para festividades de orden nacional o macro-climatología.
 
-=== FORMATO SALIDA (SOLO JSON VALIDO, SIN MARKDOWN) ===
+=== PROTOCOLO DE SALIDA ===
 {{
     "factor_global":              1.00,
     "factor_zona_centro":         1.00,
@@ -740,12 +728,12 @@ Por tanto, un factor de 1.20 ya es un ajuste importante (representa +20% en esa 
     "alerta_averia_detectada":    false,
     "zona_averia":                null,
     "confianza":                  0.85,
-    "razonamiento":               "Factores dominantes: [lista los 2-3 mas importantes y por que]"
+    "razonamiento":               "Análisis ejecutivo: [Sintetizar vectores primarios y origen del desvío]"
 }}
 """
 
     if not API_KEY:
-        print("  [FALLBACK] Sin API key — usando priors Python.")
+        print("  [FALLBACK] API Key no detectada. Operando en modo determinista (priors).")
         return _factores_desde_priors(priors), contexto
 
     try:
@@ -753,10 +741,10 @@ Por tanto, un factor de 1.20 ya es un ajuste importante (representa +20% en esa 
             messages=[
                 {"role": "system",
                  "content": (
-                     "Motor matematico hidrico. "
-                     "Devuelve SOLO JSON valido sin markdown. "
-                     "Factores entre 0.70 y 1.50. "
-                     "1.0 = consumo normal. Solo supera 1.20 con evidencia solida."
+                     "Capa de inferencia para Machine Learning. "
+                     "Respuesta estricta en JSON sin bloques de código o formato markdown. "
+                     "Rango operacional de tensores: [0.70, 1.50]. "
+                     "Baseline: 1.0. Incrementos severos (>1.20) requieren fundamentación explícita."
                  )},
                 {"role": "user", "content": prompt}
             ],
@@ -774,17 +762,18 @@ Por tanto, un factor de 1.20 ya es un ajuste importante (representa +20% en esa 
             "factor_vuelos_turismo", "factor_eventos", "factor_movilidad_ciudad",
             "factor_obras_construccion", "factor_ocupacion_hotelera",
         ]
-        # FIX: clamping más estricto [0.70, 1.50] en lugar de [0.30, 2.50]
+        
+        # Restricción estricta de tensores al rango [0.70, 1.50]
         for campo in CAMPOS_NUMERICOS:
             raw = factores.get(campo)
             if not isinstance(raw, (int, float)) or raw <= 0:
                 fallback = priors.get(campo, 1.0)
-                print(f"  [CLAMP] {campo}={raw} invalido → prior {fallback}")
+                print(f"  [SAFETY_CLAMP] Parámetro {campo}={raw} inválido. Sobrescribiendo con prior: {fallback}")
                 factores[campo] = fallback
             else:
                 clamped = max(0.70, min(1.50, raw))
                 if abs(clamped - raw) > 0.001:
-                    print(f"  [CLAMP] {campo}={raw:.3f} → {clamped:.3f}")
+                    print(f"  [SAFETY_CLAMP] Límite operacional excedido en {campo}: {raw:.3f} → {clamped:.3f}")
                 factores[campo] = clamped
 
         conf = factores.get("confianza", 0.5)
@@ -793,10 +782,10 @@ Por tanto, un factor de 1.20 ya es un ajuste importante (representa +20% en esa 
         return factores, contexto
 
     except json.JSONDecodeError as e:
-        print(f"  [ERROR] JSON invalido del LLM: {e} — usando priors Python")
+        print(f"  [SYS_ERROR] Fallo de parseo JSON del modelo generativo: {e}. Retornando priors deterministas.")
         return _factores_desde_priors(priors), contexto
     except Exception as e:
-        print(f"  [ERROR] LLM: {e} — usando priors Python")
+        print(f"  [SYS_ERROR] Excepción en servicio LLM: {e}. Retornando priors deterministas.")
         return _factores_desde_priors(priors), contexto
 
 
@@ -811,40 +800,44 @@ def _factores_desde_priors(priors: dict) -> dict:
         "alerta_averia_detectada": False,
         "zona_averia": None,
         "confianza": 0.60,
-        "razonamiento": "Modo fallback — factores calculados desde fuentes Python sin LLM."
+        "razonamiento": "Inferencia bloqueada. Tensores procedentes exclusivamente de regresión matemática base."
     })
     return base
 
 
 # =============================================================================
-# 13. EJECUCION
+# 13. EJECUCIÓN DEL MÓDULO AISLADO (MODO DEBUG)
 # =============================================================================
 
 if __name__ == "__main__":
-    print("=" * 55)
-    print("SISTEMA DE PREDICCION HIDRICA — ALICANTE")
-    print("=" * 55)
+    print("=" * 70)
+    print("SUBSISTEMA DE EXTRACCIÓN SOCIOLÓGICA (OSINT & LLM) — DIAGNÓSTICO")
+    print("=" * 70)
+
+    # Garantizar la existencia del directorio de salida
+    os.makedirs(os.path.dirname(RUTA_OUTPUT_JSON), exist_ok=True)
 
     factores, ctx = generar_factores_llm()
 
     cal    = ctx['calendario']
     perfil = cal['perfil_dia']
 
-    print("\nCONTEXTO CAPTURADO:")
-    print(f"  Clima      : {ctx['clima']['resumen']}")
-    print(f"  Aire       : {ctx['aire']['resumen']}")
-    print(f"  Dia        : {cal['dia_semana']} | Festivo: {cal['es_festivo']} | Ramadan: {cal['es_ramadan']}")
-    print(f"  Escolar    : {cal['escolar']['periodo']}")
-    print(f"  Fiestas    : {ctx['fiestas']['resumen']}")
-    print(f"  Cruceros   : {ctx['cruceros']['resumen']}")
-    print(f"  Eventos    : {ctx['eventos']['resumen']}")
-    print(f"  Movilidad  : {ctx['movilidad']['resumen']}")
-    print(f"  Obras      : {ctx['obras']['resumen']}")
-    print(f"  Hotelero   : {ctx['hotelero']['resumen']}")
+    print("\n[+] CONTEXTO CAPTURADO (APIs Externas):")
+    print(f"  Climatología      : {ctx['clima']['resumen']}")
+    print(f"  Calidad Ambiental : {ctx['aire']['resumen']}")
+    print(f"  Ciclo Temporal    : {cal['dia_semana']} | Festividad: {cal['es_festivo']} | Ramadán: {cal['es_ramadan']}")
+    print(f"  Fase Escolar      : {cal['escolar']['periodo']}")
+    print(f"  Celebraciones     : {ctx['fiestas']['resumen']}")
+    print(f"  Tráfico Marítimo  : {ctx['cruceros']['resumen']}")
+    print(f"  Tráfico Aéreo     : {ctx['vuelos']['resumen']}")
+    print(f"  Agenda de Eventos : {ctx['eventos']['resumen']}")
+    print(f"  Índice MITMA      : {ctx['movilidad']['resumen']}")
+    print(f"  Obra Civil        : {ctx['obras']['resumen']}")
+    print(f"  Densidad Turística: {ctx['hotelero']['resumen']}")
 
-    print("\n" + "=" * 55)
-    print("MATRIZ DE FACTORES (-> MODELO ML):")
-    print("=" * 55)
+    print("\n" + "=" * 70)
+    print("[+] VECTOR DE TENSORES EXTRAÍDO (A inyectar en modelo XGBoost):")
+    print("=" * 70)
     print(json.dumps(factores, indent=4, ensure_ascii=False))
 
     output = {
@@ -853,6 +846,7 @@ if __name__ == "__main__":
         "contexto":  {k: ctx[k] for k in ["clima","calendario","fiestas","cruceros",
                                             "vuelos","eventos","movilidad","obras","hotelero"]}
     }
-    with open("factores_hoy.json","w",encoding="utf-8") as f:
+    
+    with open(RUTA_OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=4, ensure_ascii=False)
-    print(f"\nGuardado en: factores_hoy.json")
+    print(f"\n[OK] Snapshot de inferencia serializada en: {RUTA_OUTPUT_JSON}")

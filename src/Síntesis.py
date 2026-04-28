@@ -1,22 +1,40 @@
+"""
+Síntesis.py — Pipeline de Data Engineering e Imputación
+==========================================================
+Módulo responsable de la ingesta, limpieza y reconstrucción de series 
+temporales hídricas. Cruza telemetría horaria parcial con facturación 
+mensual para generar un dataset de 24 horas continuo (Ground Truth) 
+mediante imputación basada en perfiles de consumo por tipología de sector.
+"""
+
+import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import warnings
+
 warnings.filterwarnings('ignore')
 
 # ==============================================================================
-# VERSIÓN MEJORADA: Con validaciones, logging y manejo robusto de errores
+# CONFIGURACIÓN DE RUTAS
 # ==============================================================================
+# Como este script está en /src, el BASE_DIR es el directorio padre (la raíz del proyecto)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RAW_DIR = os.path.join(BASE_DIR, "data", "raw")
+PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
 
-class AnalizadorCaudalMejorado:
+class DataImputer:
     
     def __init__(self):
         self.metricas = {}
         self.anomalias = []
         
-    def cargar_datos_horarios(self, ruta):
-        """Parseo con validación de calidad de datos"""
-        print("⏳ Parseando CSV horario...")
+    def cargar_datos_horarios(self, ruta: str) -> pd.DataFrame:
+        """
+        Ingesta y validación de series temporales de telemetría.
+        Aplica correcciones de formato numérico europeo y filtra valores anómalos.
+        """
+        print("⏳ Iniciando ingesta de telemetría horaria...")
         parsed_data = []
         lineas_error = 0
         
@@ -26,7 +44,7 @@ class AnalizadorCaudalMejorado:
                 if not linea: continue
                 
                 try:
-                    # Limpieza de comillas y comas europeas
+                    # Limpieza de caracteres de escape y formato numérico (comas a puntos)
                     if linea.startswith('"') and linea.endswith('"'):
                         partes = linea[1:-1].split(',', 2)
                         if len(partes) == 3:
@@ -39,31 +57,31 @@ class AnalizadorCaudalMejorado:
                             parsed_data.append([partes[0], partes[1], caudal])
                 except Exception as e:
                     lineas_error += 1
-                    if lineas_error <= 5:  # Solo mostrar primeros 5 errores
-                        print(f"  ⚠️  Línea {idx} con error: {str(e)[:50]}")
+                    if lineas_error <= 5:
+                        print(f"  ⚠️ Error de parseo en línea {idx}: {str(e)[:50]}")
 
-        print(f"  ✅ {len(parsed_data)} registros parseados, {lineas_error} errores")
+        print(f"  ✅ {len(parsed_data)} registros procesados exitosamente. ({lineas_error} descartados)")
         
         df = pd.DataFrame(parsed_data, columns=['FECHA_HORA', 'SECTOR', 'CAUDAL_M3'])
         df['FECHA_HORA'] = pd.to_datetime(df['FECHA_HORA'], format='%d/%m/%Y %H:%M')
         df['Fecha'] = df['FECHA_HORA'].dt.date
-        df['Mes'] = df['FECHA_HORA'].dt.month
-        df['Hora'] = df['FECHA_HORA'].dt.hour
-        df['Año'] = df['FECHA_HORA'].dt.year
+        df['Mes']   = df['FECHA_HORA'].dt.month
+        df['Hora']  = df['FECHA_HORA'].dt.hour
+        df['Año']   = df['FECHA_HORA'].dt.year
         
-        # VALIDACIÓN 1: Detectar valores negativos
+        # VALIDACIÓN 1: Integridad física (Caudal >= 0)
         negativos = df[df['CAUDAL_M3'] < 0]
         if len(negativos) > 0:
-            print(f"  ⚠️  ALERTA: {len(negativos)} registros con caudal negativo detectados")
+            print(f"  ⚠️ Detectados {len(negativos)} registros inconsistentes (caudal negativo). Forzando a 0.")
             df.loc[df['CAUDAL_M3'] < 0, 'CAUDAL_M3'] = 0
         
-        # VALIDACIÓN 2: Detectar outliers extremos por sector
+        # VALIDACIÓN 2: Detección de Outliers Extremos Espaciales (Umbral: 3 IQR)
         for sector in df['SECTOR'].unique():
             datos_sector = df[df['SECTOR'] == sector]['CAUDAL_M3']
             Q1 = datos_sector.quantile(0.25)
             Q3 = datos_sector.quantile(0.75)
             IQR = Q3 - Q1
-            limite_superior = Q3 + 3 * IQR  # 3 IQR (más estricto que 1.5)
+            limite_superior = Q3 + 3 * IQR
             
             outliers = df[(df['SECTOR'] == sector) & (df['CAUDAL_M3'] > limite_superior)]
             if len(outliers) > 0:
@@ -74,48 +92,60 @@ class AnalizadorCaudalMejorado:
                     'limite': limite_superior
                 })
         
-        # VALIDACIÓN 3: Verificar cobertura horaria
         horas_disponibles = sorted(df['Hora'].unique())
-        print(f"  📊 Horas disponibles: {horas_disponibles}")
         self.metricas['horas_origen'] = horas_disponibles
         
         return df
 
-    def cargar_datos_mensuales(self, ruta, año_filtro=2024):
-        """Carga con filtrado por año para coherencia temporal"""
-        print(f"⏳ Cargando CSV mensual (filtrado año {año_filtro})...")
-        df_m = pd.read_csv(ruta)
-        df_m['Fecha (aaaa/mm/dd)'] = pd.to_datetime(df_m['Fecha (aaaa/mm/dd)'])
+    def cargar_datos_mensuales(self, ruta: str, año_filtro: int = 2024) -> dict:
+        """
+        Ingesta de datos de facturación agrupados para calibración de volumen.
+        Filtra por año para asegurar consistencia temporal con la telemetría.
+        """
+        print(f"⏳ Cargando matriz de facturación mensual (Calibración {año_filtro})...")
+        df_m = pd.read_csv(ruta, sep=';', encoding='latin1') if 'aguas_corregido' in ruta else pd.read_csv(ruta)
         
-        # CRÍTICO: Filtrar solo el año que coincida con los datos horarios
-        df_m = df_m[df_m['Fecha (aaaa/mm/dd)'].dt.year == año_filtro]
+        # Ajuste adaptativo del nombre de columna según la estructura del dataset
+        col_fecha = 'Fecha (aaaa/mm/dd)' if 'Fecha (aaaa/mm/dd)' in df_m.columns else df_m.columns[0]
+        col_consumo = 'Consumo (litros)' if 'Consumo (litros)' in df_m.columns else 'CAUDAL_M3'
+        col_barrio = 'Barrio' if 'Barrio' in df_m.columns else 'BARRIO_AFECTADO'
         
-        if len(df_m) == 0:
-            print(f"  ⚠️  ADVERTENCIA: No hay datos mensuales para {año_filtro}")
-            print(f"  📅 Años disponibles: {sorted(pd.read_csv(ruta)['Fecha (aaaa/mm/dd)'].apply(lambda x: x[:4]).unique())}")
-            # Continuar con datos disponibles pero documentar discrepancia
-            df_m = pd.read_csv(ruta)
-            df_m['Fecha (aaaa/mm/dd)'] = pd.to_datetime(df_m['Fecha (aaaa/mm/dd)'])
-        else:
-            print(f"  ✅ {len(df_m)} registros de facturación en {año_filtro}")
-        
-        df_m['Mes'] = df_m['Fecha (aaaa/mm/dd)'].dt.month
-        df_m['Consumo_M3'] = pd.to_numeric(
-            df_m['Consumo (litros)'].astype(str).str.replace(',', ''), 
-            errors='coerce'
-        ) / 1000.0
-        
-        # Sumar todos los usos por Barrio y Mes
-        df_agg = df_m.groupby(['Barrio', 'Mes'])['Consumo_M3'].sum().reset_index()
-        
-        self.metricas['consumo_total_mensual'] = df_agg['Consumo_M3'].sum()
-        return dict(zip(zip(df_agg.Barrio, df_agg.Mes), df_agg.Consumo_M3))
+        try:
+            df_m[col_fecha] = pd.to_datetime(df_m[col_fecha], errors='coerce')
+            df_m = df_m[df_m[col_fecha].dt.year == año_filtro]
+            
+            if len(df_m) == 0:
+                print(f"  ⚠️ Advertencia: No se localizaron registros para {año_filtro}.")
+                df_m = pd.read_csv(ruta)
+                df_m[col_fecha] = pd.to_datetime(df_m[col_fecha], errors='coerce')
+            else:
+                print(f"  ✅ {len(df_m)} registros de facturación consolidados.")
+            
+            df_m['Mes'] = df_m[col_fecha].dt.month
+            
+            # Limpieza y conversión a metros cúbicos
+            if df_m[col_consumo].dtype == 'O':
+                df_m['Consumo_M3'] = pd.to_numeric(df_m[col_consumo].str.replace(',', ''), errors='coerce') / 1000.0
+            else:
+                df_m['Consumo_M3'] = df_m[col_consumo] / 1000.0
+                
+            df_agg = df_m.groupby([col_barrio, 'Mes'])['Consumo_M3'].sum().reset_index()
+            self.metricas['consumo_total_mensual'] = df_agg['Consumo_M3'].sum()
+            
+            return dict(zip(zip(df_agg[col_barrio], df_agg.Mes), df_agg.Consumo_M3))
+            
+        except Exception as e:
+            print(f"  ⚠️ Error procesando dataset mensual: {e}")
+            return {}
 
-    def sintetizar_24h(self, df_hora, dict_mensual, mapeo_sectores):
-        """Síntesis con múltiples perfiles y validación"""
-        print("🧠 Sintetizando horas faltantes...")
+    def sintetizar_24h(self, df_hora: pd.DataFrame, dict_mensual: dict, mapeo_sectores: dict) -> pd.DataFrame:
+        """
+        Imputación de horas faltantes cruzando el volumen mensual de facturación
+        y distribuyéndolo estocásticamente mediante perfiles de consumo tipificados.
+        """
+        print("🧠 Ejecutando motor de síntesis para completitud de 24 horas...")
         
-        # PERFILES DIFERENCIADOS (mejora sobre perfil único)
+        # Perfiles base de distribución horaria de la demanda
         PERFILES = {
             'RESIDENCIAL': {
                 13: 0.07, 14: 0.09, 15: 0.08, 16: 0.06, 17: 0.07, 18: 0.08,
@@ -129,18 +159,17 @@ class AnalizadorCaudalMejorado:
                 13: 0.09, 14: 0.08, 15: 0.07, 16: 0.05, 17: 0.03, 18: 0.02,
                 19: 0.01, 20: 0.01, 21: 0.01, 22: 0.01, 23: 0.01, 0: 0.00
             },
-            'MIXTO': {  # Promedio ponderado
+            'MIXTO': { 
                 13: 0.08, 14: 0.10, 15: 0.09, 16: 0.07, 17: 0.06, 18: 0.07,
                 19: 0.09, 20: 0.11, 21: 0.12, 22: 0.09, 23: 0.07, 0: 0.05
             }
         }
         
-        # CLASIFICACIÓN DE SECTORES (mejorable con datos reales)
         TIPO_SECTOR = {
             "CENTRO COMERCIAL GRAN VÍA": 'COMERCIAL',
             "CIUDAD DEPORTIVA DL": 'MIXTO',
             "ALIPARK DL": 'COMERCIAL',
-            # Por defecto: MIXTO para sectores no clasificados
+            # Default: MIXTO para sectores sin categorización explícita
         }
         
         df_hora['Barrio_Asignado'] = df_hora['SECTOR'].map(mapeo_sectores)
@@ -163,9 +192,10 @@ class AnalizadorCaudalMejorado:
             vol_mes_mañana_sector = vol_sector_mes.get((sector, mes), 1e-6)
             
             vol_faltante_tarde_mes = 0
-            usar_salvavidas = False
-            metodo_usado = "desconocido"
+            usar_imputacion_fallback = False
+            metodo_usado = "indeterminado"
             
+            # Estrategia de emparejamiento y cálculo de pesos
             if barrio is not None:
                 total_facturado_barrio = dict_mensual.get((barrio, mes), 0)
                 vol_mes_mañana_barrio = vol_barrio_mes.get((barrio, mes), 1e-6)
@@ -175,26 +205,25 @@ class AnalizadorCaudalMejorado:
                 vol_faltante_tarde_mes = total_estimado_sector - vol_mes_mañana_sector
                 
                 if vol_faltante_tarde_mes <= 0:
-                    usar_salvavidas = True
-                    metodo_usado = "salvavidas_inconsistencia"
+                    usar_imputacion_fallback = True
+                    metodo_usado = "imputacion_heuristica"
                 else:
                     sectores_con_mapeo += 1
-                    metodo_usado = "facturacion_real"
+                    metodo_usado = "calibracion_facturacion"
             else:
-                usar_salvavidas = True
-                metodo_usado = "salvavidas_sin_mapeo"
+                usar_imputacion_fallback = True
+                metodo_usado = "imputacion_fallback"
                 
-            if usar_salvavidas:
+            if usar_imputacion_fallback:
                 sectores_sin_mapeo += 1
+                # Estimación estándar basada en la asunción de distribución 45% (AM) / 55% (PM)
                 vol_faltante_tarde_mes = (vol_mes_mañana_sector / 0.45) * 0.55
 
-            # MEJORA: Evitar negativos
             vol_faltante_tarde_mes = max(0, vol_faltante_tarde_mes)
             
             ratio_dia = vol_dia_mañana / vol_mes_mañana_sector if vol_mes_mañana_sector > 0 else 0
             vol_faltante_hoy = vol_faltante_tarde_mes * ratio_dia
             
-            # MEJORA: Usar perfil específico del sector
             tipo = TIPO_SECTOR.get(sector, 'MIXTO')
             perfil = PERFILES[tipo]
             
@@ -206,8 +235,8 @@ class AnalizadorCaudalMejorado:
                     'METODO': metodo_usado
                 })
 
-        print(f"  ✅ Sectores con mapeo exitoso: {sectores_con_mapeo}")
-        print(f"  ⚠️  Sectores usando salvavidas: {sectores_sin_mapeo}")
+        print(f"  ✅ Sectores calibrados con facturación: {sectores_con_mapeo}")
+        print(f"  ⚠️ Sectores procesados mediante fallback heurístico: {sectores_sin_mapeo}")
         
         df_sintetico = pd.DataFrame(datos_sinteticos)
         df_completo = pd.concat([
@@ -216,38 +245,38 @@ class AnalizadorCaudalMejorado:
         ])
         df_completo = df_completo.sort_values(['SECTOR', 'FECHA_HORA']).reset_index(drop=True)
         
-        # MÉTRICAS DE VALIDACIÓN
+        # Registro de métricas de validación
         self.metricas['total_original'] = df_hora['CAUDAL_M3'].sum()
-        self.metricas['total_sintetico'] = df_sintetico['CAUDAL_M3'].sum()
-        self.metricas['ratio_tarde_mañana'] = self.metricas['total_sintetico'] / self.metricas['total_original']
+        self.metricas['total_sintetico'] = df_sintetico['CAUDAL_M3'].sum() if not df_sintetico.empty else 0
+        self.metricas['ratio_tarde_mañana'] = self.metricas['total_sintetico'] / self.metricas['total_original'] if self.metricas['total_original'] > 0 else 0
         
         return df_completo
 
     def generar_reporte_calidad(self):
-        """Genera reporte de validación de la síntesis"""
+        """Genera el reporte final de validación de la síntesis del dataset."""
         print("\n" + "="*80)
-        print("📊 REPORTE DE CALIDAD DE DATOS")
+        print("📊 REPORTE DE CALIDAD DE DATOS (DATA QUALITY AUDIT)")
         print("="*80)
         
-        print(f"\n🔢 MÉTRICAS GLOBALES:")
-        print(f"  • Volumen telemetría original: {self.metricas['total_original']:,.0f} m³")
-        print(f"  • Volumen sintetizado (tarde): {self.metricas['total_sintetico']:,.0f} m³")
-        print(f"  • Ratio tarde/mañana: {self.metricas['ratio_tarde_mañana']:.2%}")
+        print(f"\n🔢 MÉTRICAS DE VOLUMEN GLOBAL:")
+        print(f"  • Telemetría verificada (AM):   {self.metricas.get('total_original', 0):,.0f} m³")
+        print(f"  • Imputación calculada (PM):    {self.metricas.get('total_sintetico', 0):,.0f} m³")
+        print(f"  • Proporción PM/AM:             {self.metricas.get('ratio_tarde_mañana', 0):.2%}")
         
-        if self.metricas['ratio_tarde_mañana'] < 0.5 or self.metricas['ratio_tarde_mañana'] > 2.0:
-            print(f"  ⚠️  ALERTA: Ratio fuera del rango esperado (0.5-2.0)")
+        if self.metricas.get('ratio_tarde_mañana', 0) < 0.5 or self.metricas.get('ratio_tarde_mañana', 0) > 2.0:
+            print(f"  ⚠️ ALERTA: La proporción de imputación se encuentra fuera del intervalo esperado (0.5 - 2.0).")
         
         if self.anomalias:
-            print(f"\n⚠️  OUTLIERS DETECTADOS: {len(self.anomalias)} sectores")
-            for a in self.anomalias[:5]:  # Top 5
-                print(f"  • {a['sector']}: {a['outliers']} valores > {a['limite']:.1f} m³ (max: {a['max_valor']:.1f})")
+            print(f"\n⚠️ ANOMALÍAS ESPACIALES (OUTLIERS DETECTADOS): {len(self.anomalias)} sectores")
+            for a in self.anomalias[:5]:
+                print(f"  • {a['sector']}: {a['outliers']} registros > {a['limite']:.1f} m³ (Máximo histórico: {a['max_valor']:.1f})")
         
-        print("\n✅ Proceso completado")
+        print("\n✅ Proceso de consolidación finalizado exitosamente.")
         print("="*80)
 
 
 # ==============================================================================
-# EJECUCIÓN CON MAPEO
+# CONFIGURACIÓN GEOGRÁFICA Y EJECUCIÓN
 # ==============================================================================
 MAPEO_SECTORES = {
     "1 CIUDAD JARDÍN": "31-CIUDAD JARDIN",
@@ -296,21 +325,24 @@ MAPEO_SECTORES = {
 }
 
 if __name__ == "__main__":
-    analizador = AnalizadorCaudalMejorado()
     
-    df_h = analizador.cargar_datos_horarios(
-        '_caudal_medio_sector_hidraulico_hora_2024_-caudal_medio_sector_hidraulico_hora_2024.csv'
-    )
+    # Verificación de estructura de directorios
+    os.makedirs(PROCESSED_DIR, exist_ok=True)
     
-    dict_m = analizador.cargar_datos_mensuales(
-        'datos-hackathon-amaem.xlsx-set-de-datos-.csv',
-        año_filtro=2024  # CRÍTICO: usar mismo año
-    )
+    imputer = DataImputer()
     
-    df_final = analizador.sintetizar_24h(df_h, dict_m, MAPEO_SECTORES)
+    # Ingesta
+    ruta_horarios = os.path.join(RAW_DIR, 'caudales_horarios.csv')
+    df_h = imputer.cargar_datos_horarios(ruta_horarios)
     
-    analizador.generar_reporte_calidad()
+    ruta_mensuales = os.path.join(RAW_DIR, 'aguas_corregido_v2_Sheet1_.csv')
+    dict_m = imputer.cargar_datos_mensuales(ruta_mensuales, año_filtro=2024)
     
-    # Guardar con columna de método para trazabilidad
-    df_final.to_csv('Dataset_24H_Mejorado_V2.csv', index=False)
-    print("\n💾 Dataset guardado: Dataset_24H_Mejorado_V2.csv")
+    # Procesamiento
+    df_final = imputer.sintetizar_24h(df_h, dict_m, MAPEO_SECTORES)
+    imputer.generar_reporte_calidad()
+    
+    # Exportación
+    ruta_exportacion = os.path.join(PROCESSED_DIR, 'Dataset_24H_Mejorado_V2.csv')
+    df_final.to_csv(ruta_exportacion, index=False)
+    print(f"\n💾 Dataset consolidado exportado en: {ruta_exportacion}")

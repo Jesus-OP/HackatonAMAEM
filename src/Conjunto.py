@@ -1,27 +1,21 @@
 """
-motor_predictivo_hibrido.py  — VERSIÓN CORREGIDA
-=================================================
-Correcciones aplicadas sobre la versión original:
-
-  ORIGINAL (bugs):
-  1. Producto acumulado de factores → explosión combinatoria (1.10^8 = 2.14x)
-  2. Umbral de alerta sobre variacion_pct del multiplicador puro (no del consumo real)
-  3. Clamping individual hasta 2.50 demasiado permisivo
-  4. factor_calor_acumulado elevado a exponente 1.5 antes de entrar al producto
-
-  CORRECCIONES:
-  1. Combinación por MEDIA PONDERADA con pesos por relevancia (no producto)
-  2. Cap duro del multiplicador final en ±MAX_VARIACION antes de la alerta
-  3. Clamping individual más estricto: [0.70, 1.50]
-  4. Calor en playa: peso x2 en la media ponderada, no exponente
-  5. Umbrales de alerta relativos al consumo histórico del sector (percentiles)
-  6. Fallback explícito a 1.0 si el LLM devuelve factores fuera de rango
+Conjunto.py — Motor Predictivo de Ensamble Híbrido (XGBoost + LLM)
+===================================================================
+Núcleo del Gemelo Digital de Predicción Hídrica. 
+Implementa una arquitectura de fusión que combina un modelo puramente 
+estadístico/inercial (XGBoost con TimeSeriesSplit) con un vector de 
+tensores sociológicos generados en tiempo real (LLM Zero-Shot). 
+Incluye un motor de enrutamiento espaciotemporal y reglas estrictas 
+de dominio (Clipping y Ponderación) para garantizar la seguridad 
+física de las predicciones en la red de abastecimiento.
 """
 
+import os
 import json
 import warnings
-from datetime import timedelta
+from datetime import datetime, timedelta
 import agente_llm
+import joblib
 
 import numpy as np
 import pandas as pd
@@ -33,48 +27,57 @@ from xgboost import XGBRegressor
 warnings.filterwarnings("ignore")
 
 # ==============================================================================
-# CONSTANTES GLOBALES
+# CONFIGURACIÓN DE RUTAS
 # ==============================================================================
-
-# BUG FIX #3: clamping individual más estricto
-FACTOR_MIN = 0.70   # antes 0.30 — un factor nunca debería bajar el consumo un 70%
-FACTOR_MAX = 1.50   # antes 2.50 — un factor aislado no puede doblar el consumo
-
-# BUG FIX #2: cap duro del multiplicador combinado ANTES de calcular la alerta
-MULT_CAP_MIN = 0.60  # máximo -40% de variación combinada
-MULT_CAP_MAX = 1.40  # máximo +40% de variación combinada
-
-# Umbrales de alerta (sobre la variación porcentual del multiplicador ya capado)
-UMBRAL_ESTRES = 15.0   # antes 30% — ahora más sensible y realista
-UMBRAL_CAIDA  = -15.0  # antes -30%
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
+OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 
 # ==============================================================================
-# 1. PREPARACIÓN DE DATOS Y FEATURE ENGINEERING
+# HIPERPARÁMETROS Y LÍMITES OPERACIONALES (CLIPPING)
+# ==============================================================================
+
+# Límites de impacto por tensor individual
+FACTOR_MIN = 0.70   
+FACTOR_MAX = 1.50   
+
+# Saturación del multiplicador global (Previene explosión combinatoria)
+MULT_CAP_MIN = 0.60  # Límite inferior de desviación permitida (-40%)
+MULT_CAP_MAX = 1.40  # Límite superior de desviación permitida (+40%)
+
+# Umbrales de activación de alertas (Porcentaje de desviación respecto a la base)
+UMBRAL_ESTRES = 15.0  
+UMBRAL_CAIDA  = -15.0 
+
+
+# ==============================================================================
+# 1. INGENIERÍA DE CARACTERÍSTICAS (FEATURE ENGINEERING)
 # ==============================================================================
 
 def preparar_datos_ml(ruta_csv: str) -> tuple[pd.DataFrame, LabelEncoder]:
     """
-    Carga el CSV, construye features temporales y lags reales por sector.
-    Devuelve el DataFrame limpio y el LabelEncoder ajustado.
+    Ingesta del dataset procesado (Ground Truth) y construcción de variables 
+    inerciales (Lags espaciotemporales) y cíclicas.
     """
-    print("⚙️  Preparando datos para XGBoost...")
+    print("⚙️ Ingestando y vectorizando series temporales para entrenamiento...")
     df = pd.read_csv(ruta_csv)
     df["FECHA_HORA"] = pd.to_datetime(df["FECHA_HORA"])
     df = df.sort_values(["SECTOR", "FECHA_HORA"]).reset_index(drop=True)
 
+    # Codificación de variables cíclicas temporales
     df["Hora"]           = df["FECHA_HORA"].dt.hour
     df["DiaSemana"]      = df["FECHA_HORA"].dt.dayofweek
     df["Mes"]            = df["FECHA_HORA"].dt.month
     df["Es_FinDeSemana"] = df["DiaSemana"].isin([5, 6]).astype(int)
 
+    # Generación de retardos inerciales aislados por sector (Evita Data Leakage espacial)
     df["Lag_24h"]  = df.groupby("SECTOR")["CAUDAL_M3"].shift(24)
     df["Lag_168h"] = df.groupby("SECTOR")["CAUDAL_M3"].shift(168)
 
     le = LabelEncoder()
     df["SECTOR_ENC"] = le.fit_transform(df["SECTOR"])
 
-    # Calculamos percentiles históricos por sector y hora para umbrales de alerta
+    # Cálculo de percentiles históricos por sector y franja horaria para umbrales dinámicos
     df["p85_sector_hora"] = df.groupby(["SECTOR", "Hora"])["CAUDAL_M3"].transform(
         lambda x: x.quantile(0.85)
     )
@@ -85,13 +88,12 @@ def preparar_datos_ml(ruta_csv: str) -> tuple[pd.DataFrame, LabelEncoder]:
     cols_eliminar = [c for c in ["METODO"] if c in df.columns]
     df = df.drop(columns=cols_eliminar).dropna()
 
-    print(f"   → {len(df):,} registros listos | {df['SECTOR'].nunique()} sectores | "
-          f"rango: {df['FECHA_HORA'].min().date()} → {df['FECHA_HORA'].max().date()}")
+    print(f"  → Matriz resultante: {len(df):,} vectores | {df['SECTOR'].nunique()} sectores.")
     return df, le
 
 
 # ==============================================================================
-# 2. ENTRENAMIENTO CON VALIDACIÓN TEMPORAL (TimeSeriesSplit)
+# 2. ENTRENAMIENTO ROBUSTO (TIME-SERIES SPLIT)
 # ==============================================================================
 
 FEATURES = ["Hora", "DiaSemana", "Mes", "Es_FinDeSemana",
@@ -100,9 +102,10 @@ FEATURES = ["Hora", "DiaSemana", "Mes", "Es_FinDeSemana",
 
 def entrenar_modelo(df: pd.DataFrame) -> XGBRegressor:
     """
-    Entrena XGBRegressor con TimeSeriesSplit. Devuelve modelo entrenado con todos los datos.
+    Entrenamiento del modelo Gradient Boosting. Utiliza validación cruzada 
+    temporal estricta para garantizar el respeto a la causalidad histórica.
     """
-    print("\n🧠 Entrenando XGBoost con validación temporal (TimeSeriesSplit)...")
+    print("\n🧠 Calibrando motor XGBoost (TimeSeriesSplit Cross-Validation)...")
 
     X = df[FEATURES]
     y = df["CAUDAL_M3"]
@@ -117,19 +120,18 @@ def entrenar_modelo(df: pd.DataFrame) -> XGBRegressor:
         pred = m.predict(X.iloc[test_idx])
         mae  = mean_absolute_error(y.iloc[test_idx], pred)
         maes.append(mae)
-        print(f"   Fold {fold}: MAE = {mae:.3f} M³")
 
-    print(f"\n✅ MAE medio CV temporal: {np.mean(maes):.3f} ± {np.std(maes):.3f} M³")
+    print(f"  ✅ Error Medio Absoluto (MAE) CV: {np.mean(maes):.3f} ± {np.std(maes):.3f} M³")
 
+    # Reentrenamiento sobre el corpus completo para máxima capacidad de inferencia
     modelo_final = XGBRegressor(n_estimators=150, learning_rate=0.1,
                                 max_depth=5, random_state=42, n_jobs=-1)
     modelo_final.fit(X, y)
-    print("✅ Modelo final entrenado sobre el dataset completo.")
     return modelo_final
 
 
 # ==============================================================================
-# 3. OBTENCIÓN DE LAGS REALES PARA INFERENCIA
+# 3. EXTRACCIÓN DE INERCIA EN TIEMPO REAL
 # ==============================================================================
 
 def _obtener_lag_real(df_sector: pd.DataFrame, timestamp: pd.Timestamp,
@@ -142,17 +144,15 @@ def _obtener_lag_real(df_sector: pd.DataFrame, timestamp: pd.Timestamp,
 
     hora = ts_objetivo.hour
     media = df_sector[df_sector["Hora"] == hora]["CAUDAL_M3"].mean()
-    warnings.warn(
-        f"⚠️  Lag real no encontrado para {ts_objetivo}. "
-        f"Usando media histórica a las {hora:02d}h como fallback."
-    )
+    warnings.warn(f"⚠️ Ruptura inercial en {ts_objetivo}. Imputando media histórica horaria.")
     return float(media)
 
 
 # ==============================================================================
-# 4. LÓGICA DE FACTORES LLM — CORRECCIÓN CENTRAL
+# 4. FUSIÓN HÍBRIDA (ENRUTAMIENTO Y PONDERACIÓN)
 # ==============================================================================
 
+# Reglas de enrutamiento espacial
 _FACTORES_POR_ZONA = {
     "ZONA_CENTRO": {
         "factor_global", "factor_zona_centro", "factor_cruceros",
@@ -176,18 +176,16 @@ _FACTORES_POR_TRAMO = {
     "noche":  {"factor_franja_noche"},
 }
 
-# BUG FIX #4: pesos por factor en lugar de exponentes ad-hoc
-# Factores más relevantes tienen mayor peso en la media ponderada
+# Matriz de Ponderación Dinámica (Relevancia de variables)
 _PESOS_FACTOR = {
-    "factor_global":              2.0,  # siempre tiene alto peso
-    "factor_calor_acumulado":     2.5,  # antes se elevaba a ^1.5, ahora doble peso en media
+    "factor_global":              2.0,  
+    "factor_calor_acumulado":     2.5,  
     "factor_eventos":             1.5,
     "factor_ocupacion_hotelera":  1.5,
     "factor_fin_de_semana":       1.0,
     "factor_franja_manana":       0.8,
     "factor_franja_tarde":        1.2,
     "factor_franja_noche":        0.6,
-    # resto de factores: peso 1.0 por defecto
 }
 
 
@@ -208,17 +206,12 @@ def asignar_macrozona(sector: str) -> str:
 
 
 def _sanitizar_factor(valor_raw, nombre: str) -> float:
-    """
-    Convierte el valor devuelto por el LLM a float con clamping estricto.
-    Devuelve 1.0 (neutro) si el valor es inválido.
-    """
     try:
         v = float(valor_raw)
         if not np.isfinite(v):
             return 1.0
         return max(FACTOR_MIN, min(FACTOR_MAX, v))
     except (TypeError, ValueError):
-        warnings.warn(f"⚠️ Factor '{nombre}' inválido ({valor_raw!r}), usando 1.0")
         return 1.0
 
 
@@ -226,20 +219,11 @@ def aplicar_factores_llm(
     factores_ia: dict, zona: str, tramo: str, hora: int, es_ramadan: bool = False
 ) -> tuple[float, dict]:
     """
-    BUG FIX #1 — Combina factores LLM mediante MEDIA PONDERADA en lugar de producto.
-
-    Razón: con producto, N factores de 1.10 dan 1.10^N → explosión exponencial.
-    Con media ponderada, el resultado es siempre proporcional a la desviación media
-    de los factores, independientemente de cuántos haya activos.
-
-    BUG FIX #2 — Cap duro del multiplicador final antes de calcular la alerta.
-    BUG FIX #3 — Clamping individual [FACTOR_MIN, FACTOR_MAX] más estricto.
-    BUG FIX #4 — factor_calor_acumulado tiene doble peso en media, no exponente ^1.5.
+    Fusión matemática de tensores sociológicos mediante Media Ponderada.
+    Integra reglas de dominio espacial y amortiguación de confianza del LLM.
     """
     if zona not in _FACTORES_POR_ZONA:
-        raise ValueError(f"Zona '{zona}' desconocida.")
-    if tramo not in _FACTORES_POR_TRAMO:
-        raise ValueError(f"Tramo '{tramo}' desconocido.")
+        raise ValueError(f"Enrutamiento espacial fallido. Zona '{zona}' desconocida.")
 
     activos = _FACTORES_POR_ZONA[zona] | _FACTORES_POR_TRAMO[tramo]
     if es_ramadan and zona == "ZONA_NORTE" and tramo == "noche":
@@ -253,23 +237,22 @@ def aplicar_factores_llm(
         valor = _sanitizar_factor(factores_ia.get(nombre_factor, 1.0), nombre_factor)
         peso  = _PESOS_FACTOR.get(nombre_factor, 1.0)
 
-        # calor en playa tarde/noche: doble peso en la media (antes era ^1.5 en el producto)
+        # Sobrecarga dinámica de pesos por correlación espaciotemporal (ej. Playa + Calor + Tarde)
         if nombre_factor == "factor_calor_acumulado" and zona == "PLAYA_SAN_JUAN" and tramo in ("tarde", "noche"):
             peso *= 2.0
-            audit_trail["_nota_calor"] = f"Peso x2 en PLAYA {tramo} (era ^1.5 en versión con producto)"
+            audit_trail["_nota_calor"] = f"Ponderación agravada en PLAYA_SAN_JUAN."
 
         suma_ponderada += valor * peso
         suma_pesos     += peso
         audit_trail[nombre_factor] = round(valor, 4)
 
-    # BUG FIX #1: multiplicador como media ponderada
     multiplicador_raw = suma_ponderada / suma_pesos if suma_pesos > 0 else 1.0
 
-    # Ajuste por confianza del LLM (igual que antes)
+    # Amortiguación basada en la confianza declarada por la capa Zero-Shot
     confianza = max(0.0, min(1.0, float(factores_ia.get("confianza", 1.0))))
     multiplicador_ajustado = 1.0 + (multiplicador_raw - 1.0) * confianza
 
-    # BUG FIX #2: cap duro del multiplicador final
+    # Saturación de seguridad (Clipping general)
     multiplicador_final = max(MULT_CAP_MIN, min(MULT_CAP_MAX, multiplicador_ajustado))
 
     audit_trail["_multiplicador_raw"]       = round(multiplicador_raw, 4)
@@ -285,20 +268,12 @@ def aplicar_factores_llm(
 
 
 # ==============================================================================
-# 5. PREDICCIÓN DEL PERFIL COMPLETO DE 24H
+# 5. INFERENCIA Y PROYECCIÓN 24H
 # ==============================================================================
 
 def _calcular_alerta(consumo_proyectado: float, consumo_base: float,
-                     variacion_pct: float,
-                     p85: float, p15: float) -> str:
-    """
-    BUG FIX #2 mejorado: la alerta combina la variación del multiplicador
-    con los percentiles históricos reales del sector.
-
-    - Si la proyección supera el p85 histórico Y hay variación positiva → ESTRÉS
-    - Si la proyección cae por debajo del p15 Y hay variación negativa → CAÍDA
-    - Si solo el multiplicador supera el umbral pero el consumo es normal → NORMAL
-    """
+                     variacion_pct: float, p85: float, p15: float) -> str:
+    """Clasificación del nivel de estrés hídrico basada en anomalía vs. histórico."""
     sobre_percentil_alto = consumo_proyectado > p85
     bajo_percentil_bajo  = consumo_proyectado < p15
 
@@ -307,7 +282,6 @@ def _calcular_alerta(consumo_proyectado: float, consumo_base: float,
     elif variacion_pct < UMBRAL_CAIDA and bajo_percentil_bajo:
         return "🔵 CAÍDA"
     elif variacion_pct > UMBRAL_ESTRES:
-        # Multiplicador alto pero consumo absoluto dentro del rango histórico → advertencia suave
         return "🟡 VIGILAR"
     else:
         return "🟢 NORMAL"
@@ -322,7 +296,7 @@ def predecir_perfil_24h(
     df_sector  = df_historico[df_historico["SECTOR"] == sector_objetivo].copy()
 
     if df_sector.empty:
-        raise ValueError(f"Sector '{sector_objetivo}' no encontrado en histórico.")
+        raise ValueError(f"Fallo de inferencia: Sector '{sector_objetivo}' aislado.")
 
     sector_enc = int(le.transform([sector_objetivo])[0])
     zona       = asignar_macrozona(sector_objetivo)
@@ -335,7 +309,6 @@ def predecir_perfil_24h(
         lag_24h  = _obtener_lag_real(df_sector, ts, 24)
         lag_168h = _obtener_lag_real(df_sector, ts, 168)
 
-        # Percentiles históricos de esta hora en este sector
         filas_hora = df_sector[df_sector["Hora"] == hora]
         p85 = filas_hora["CAUDAL_M3"].quantile(0.85) if not filas_hora.empty else np.inf
         p15 = filas_hora["CAUDAL_M3"].quantile(0.15) if not filas_hora.empty else 0.0
@@ -354,7 +327,7 @@ def predecir_perfil_24h(
         )
 
         consumo_proyectado = consumo_base * multiplicador
-        variacion_pct      = (multiplicador - 1.0) * 100  # variación del ajuste LLM
+        variacion_pct      = (multiplicador - 1.0) * 100 
 
         alerta = _calcular_alerta(consumo_proyectado, consumo_base, variacion_pct, p85, p15)
 
@@ -378,23 +351,20 @@ def predecir_perfil_24h(
 
 
 # ==============================================================================
-# 6. REPORTE FINAL
+# 6. EXPLICABILIDAD GENERATIVA (XAI)
 # ==============================================================================
 
 def generar_reporte_gerencial(df_pred, sector, contexto_texto):
-    """Envía resultados a Groq para redactar el parte operativo en lenguaje natural."""
+    """Traducción de métricas operativas a lenguaje natural mediante LLM."""
     from groq import Groq
-    import os
-    # IMPORTANTE: Importamos streamlit para leer los secrets si estamos en la nube
+    
     try:
         import streamlit as st
     except ImportError:
         st = None
 
-    print("🤖 Generando informe de operaciones con Llama-3...")
+    print("🤖 Sintetizando informe operativo (XAI)...")
 
-    # Buscamos la clave de forma segura: 
-    # 1. En Secrets de Streamlit, 2. En variables de entorno, 3. Vacío si no hay nada
     api_key = ""
     if st and "GROQ_API_KEY" in st.secrets:
         api_key = st.secrets["GROQ_API_KEY"]
@@ -402,7 +372,7 @@ def generar_reporte_gerencial(df_pred, sector, contexto_texto):
         api_key = os.environ.get("GROQ_API_KEY", "")
 
     if not api_key:
-        return "⚠️ Error: GROQ_API_KEY no encontrada. No se puede generar el informe."
+        return "⚠️ Alerta de Sistema: API Key ausente. Generación de informe operativo abortada."
 
     client = Groq(api_key=api_key)
 
@@ -412,90 +382,74 @@ def generar_reporte_gerencial(df_pred, sector, contexto_texto):
     variacion_media = df_pred['variacion_pct'].mean()
 
     prompt = f"""
-Eres el Jefe de Operaciones de Aguas de Alicante. Redacta el 'Informe Diario de Riesgo'.
+Actúa como Analista Principal de la red de abastecimiento. Genera el 'Informe de Riesgo Operativo'.
 
-DATOS DEL SECTOR {sector}:
-- Volumen total proyectado hoy: {consumo_total:.2f} M3
-- Horas en ESTRÉS confirmado: {horas_estres if horas_estres else 'Ninguna'}
-- Horas en VIGILANCIA preventiva: {horas_vigilar if horas_vigilar else 'Ninguna'}
-- Variación media proyectada: {variacion_media:+.1f}%
+MÉTRICAS:
+- Área: {sector}
+- Volumen proyectado: {consumo_total:.2f} M3
+- Horas Críticas (Estrés): {horas_estres if horas_estres else 'Ninguna'}
+- Horas de Vigilancia: {horas_vigilar if horas_vigilar else 'Ninguna'}
+- Tasa de variación: {variacion_media:+.1f}%
 
-CONTEXTO SOCIOLÓGICO ACTUAL:
+CONTEXTO DE INFERENCIA:
 {contexto_texto}
 
-INSTRUCCIONES:
-1. Sé directo y gerencial.
-2. Explica POR QUÉ esperamos esos consumos cruzando números con contexto sociológico.
-3. Da recomendación táctica a operarios (válvulas, presión, zonas a vigilar).
-4. Si no hay horas en estrés, confírmalo explícitamente para tranquilidad del equipo.
-MÁXIMO 150 PALABRAS.
+REGLAS DE REDACCIÓN:
+1. Tono estrictamente analítico, conciso y técnico.
+2. Relaciona la desviación del caudal esperado con los vectores sociológicos detectados.
+3. Provee una recomendación táctica de ajuste en la infraestructura.
+4. Límite estricto: 150 palabras.
 """
 
     try:
         chat_completion = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model="llama-3.3-70b-versatile",
-            temperature=0.3,
+            temperature=0.2,
         )
         return chat_completion.choices[0].message.content
     except Exception as e:
-        return f"Error generando reporte con Groq: {e}"
-
-
-def imprimir_reporte(df_pred: pd.DataFrame, sector: str, json_llm: dict) -> None:
-    print("\n" + "=" * 65)
-    print(f"  PREDICCIÓN HÍBRIDA — {sector}")
-    print(f"  Factores LLM recibidos: {json_llm}")
-    mult_medio = df_pred['multiplicador_llm'].mean()
-    print(f"  Multiplicador LLM medio del día: x{mult_medio:.4f}")
-    print("=" * 65)
-    print(f"{'Hora':>5} {'Base (M³)':>12} {'Proyect. (M³)':>14} {'Var%':>8}  {'P85':>8}  Alerta")
-    print("-" * 65)
-    for _, row in df_pred.iterrows():
-        print(f"{int(row['hora']):>5}h  "
-              f"{row['consumo_base_m3']:>10.3f}   "
-              f"{row['consumo_proyectado_m3']:>12.3f}   "
-              f"{row['variacion_pct']:>+7.1f}%  "
-              f"{row['p85_historico']:>8.3f}  {row['alerta']}")
-    print("-" * 65)
-
-    total_base  = df_pred["consumo_base_m3"].sum()
-    total_final = df_pred["consumo_proyectado_m3"].sum()
-    var_total   = ((total_final - total_base) / total_base) * 100
-
-    conteo = df_pred["alerta"].value_counts()
-    print(f"\n  TOTALES DEL DÍA")
-    print(f"  Base XGBoost:      {total_base:.2f} M³")
-    print(f"  Proyección final:  {total_final:.2f} M³  ({var_total:+.1f}%)")
-    print(f"  🔴 ESTRÉS:         {conteo.get('🔴 ESTRÉS', 0)}/24 horas")
-    print(f"  🟡 VIGILAR:        {conteo.get('🟡 VIGILAR', 0)}/24 horas")
-    print(f"  🟢 NORMAL:         {conteo.get('🟢 NORMAL', 0)}/24 horas")
-    print(f"  🔵 CAÍDA:          {conteo.get('🔵 CAÍDA', 0)}/24 horas")
-    print("=" * 65)
+        return f"Error en orquestación de informe: {e}"
 
 
 # ==============================================================================
-# EJECUCIÓN
+# PIPELINE DE EJECUCIÓN 
 # ==============================================================================
 
 if __name__ == "__main__":
-    RUTA_CSV          = "Dataset_24H_Mejorado_V2.csv"
-    FECHA_PREDICCION  = "2026-04-06"
+    
+    # Garantizar la existencia del directorio de salida
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    
+    RUTA_CSV = os.path.join(PROCESSED_DIR, "Dataset_24H_Mejorado_V2.csv")
+    FECHA_PREDICCION = datetime.now().strftime("%Y-%m-%d")
 
     df_historico, label_encoder = preparar_datos_ml(RUTA_CSV)
-    modelo_xgb = entrenar_modelo(df_historico)
+    
+    # Ruta donde se guardará/leerá el modelo congelado
+    RUTA_MODELO = os.path.join(BASE_DIR, "modelos", "modelo_xgb_final.joblib")
+    
+    if os.path.exists(RUTA_MODELO):
+        print("\n⚡ Cargando modelo XGBoost pre-entrenado (Modo Demo Ultrarrápido)...")
+        modelo_xgb = joblib.load(RUTA_MODELO)
+    else:
+        print("\n🧠 Modelo no encontrado. Entrenando por primera vez...")
+        os.makedirs(os.path.join(BASE_DIR, "models"), exist_ok=True)
+        modelo_xgb = entrenar_modelo(df_historico)
+        joblib.dump(modelo_xgb, RUTA_MODELO)
+        print(f"💾 Modelo guardado en {RUTA_MODELO} para futuras ejecuciones.")
 
-    print("\n🌐 Leyendo el mundo real mediante agente_llm.py...")
+    print("\n🌐 Ejecutando Capa Sensorial OSINT (agente_llm)...")
     factores_ia, contexto_dict = agente_llm.generar_factores_llm()
 
-    es_ramadan   = contexto_dict['calendario']['es_ramadan']
+    es_ramadan = contexto_dict['calendario']['es_ramadan']
     resumen_social = (
         f"Clima: {contexto_dict['clima']['resumen']}. "
         f"Fiestas: {contexto_dict['fiestas']['resumen']}. "
         f"Eventos: {contexto_dict['eventos']['resumen']}."
     )
 
-    print("\n🚀 Calculando proyecciones para los 43 sectores...")
+    print(f"\n🚀 Procesando inferencia espacial iterativa para {df_historico['SECTOR'].nunique()} sectores...")
     sectores_unicos        = df_historico['SECTOR'].unique()
     todas_las_predicciones = []
 
@@ -508,31 +462,31 @@ if __name__ == "__main__":
             df_sector_pred.insert(0, 'sector', sector)
             todas_las_predicciones.append(df_sector_pred)
         except Exception as e:
-            print(f"⚠️ Error calculando {sector}: {e}")
+            print(f"⚠️ Omisión en {sector}: {e}")
 
     df_maestro = pd.concat(todas_las_predicciones, ignore_index=True)
 
-    # Diagnóstico rápido de distribución de alertas (útil para detectar futuros sesgos)
-    print("\n📊 DISTRIBUCIÓN GLOBAL DE ALERTAS:")
+    print("\n📊 DISTRIBUCIÓN GLOBAL DE CLASIFICACIÓN DE ALERTA:")
     print(df_maestro["alerta"].value_counts().to_string())
 
-    print("\n🤖 Generando informe global de operaciones con Llama-3...")
+    print("\n🤖 Consolidando Informe Operativo Global...")
     sectores_en_estres = df_maestro[df_maestro['alerta'] == '🔴 ESTRÉS']['sector'].nunique()
 
     informe_global = generar_reporte_gerencial(
         df_maestro,
-        sector=f"GLOBAL CIUDAD ({sectores_en_estres} sectores en estrés hoy)",
+        sector=f"GLOBAL CIUDAD ({sectores_en_estres} sectores en estrés crítico)",
         contexto_texto=resumen_social
     )
 
-    print("\n" + "📢" * 20)
-    print("  INFORME GERENCIAL PARA STREAMLIT:")
-    print("📢" * 20 + "\n")
+    print("\n" + "=" * 65)
+    print("  INFORME EJECUTIVO:")
+    print("=" * 65 + "\n")
     print(informe_global)
 
-    with open("informe_global.txt", "w", encoding="utf-8") as f:
+    ruta_informe = os.path.join(OUTPUT_DIR, "informe_global.txt")
+    with open(ruta_informe, "w", encoding="utf-8") as f:
         f.write(informe_global)
 
-    out_csv = f"prediccion_GLOBAL_ALICANTE_{FECHA_PREDICCION}.csv"
+    out_csv = os.path.join(OUTPUT_DIR, f"prediccion_GLOBAL_ALICANTE_{FECHA_PREDICCION}.csv")
     df_maestro.to_csv(out_csv, index=False)
-    print(f"\n💾 ¡Misión Cumplida! Archivo maestro exportado → {out_csv}")
+    print(f"\n💾 Pipeline completado con éxito. Resultados exportados a:\n -> {out_csv}")
