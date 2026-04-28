@@ -585,7 +585,7 @@ if st.sidebar.button("🚀 Ejecutar Pipeline Predictivo", use_container_width=Tr
             time.sleep(1)
             st.rerun()
         else:
-            placeholder_log.error(f"❌ Error en la consolidación del modelo: {e}")
+            placeholder_log.error("❌ Error en la consolidación del modelo. Abre la traza abajo 👇")
             with st.sidebar.expander("Ver traza de ejecución"):
                 st.code(resultado.stderr[-2000:] if resultado.stderr else "Traza no disponible.")
     except subprocess.TimeoutExpired:
