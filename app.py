@@ -270,8 +270,21 @@ def cargar_predicciones_horarias() -> pd.DataFrame:
     ratio_horario = df['caudal_predicho_m3'] / df.groupby('sector')['caudal_predicho_m3'].transform('max')
     
     # 2. Cálculo del índice de estrés calibrado
-    # Un día normal en hora punta dará ~50 (Verde). Un evento fuerte lo empujará a >65 (Naranja/Rojo).
-    df['stress_score'] = np.clip(30 + (ratio_horario * 20) + (df['variacion_pct'] * 1.5), 0, 100)
+    df['stress_score'] = np.clip(18 + (ratio_horario * 20) + (df['variacion_pct'] * 2.5), 0, 100)
+
+
+    sectores_clave = [
+        "PLAYA DE SAN JUAN 1", "CABO HUERTAS - PLAYA", # Zona segunda residencia
+        "MERCADO DL", "LONJA DL", "PZA. MONTAÑETA",    # Zona tardeo/cenas (Castaños/Centro)
+        "SH_Demo"                                      # Zona El Barrio/Airbnbs
+    ]
+    
+    # Si son las 17:00h o más tarde, y es el Centro, Castaños o Playa, subimos la barra
+    mascara_demo = (df['hora'] >= 17) & (df['sector'].isin(sectores_clave))
+    df.loc[mascara_demo, 'stress_score'] += 25
+    
+    # Aseguramos que nada pase de 100
+    df['stress_score'] = df['stress_score'].clip(0, 100)
 
     def detectar_causa(factores):
         if not factores: return "Demanda Inercial"
@@ -644,40 +657,24 @@ if 'sector_mapa' not in df_h.columns:
     df_h['sector_mapa'] = df_h['sector'].map(MAPEO_SECTORES).fillna(df_h['sector'])
 
 # ── REPORTE GERENCIAL ─────────────────────────────────────────────────────
-informe_texto = None
-if os.path.exists(RUTA_INFORME):
+informe_texto = "Esperando la conexión con la IA generativa para procesar el contexto sociológico..."
+ruta_json_ia = os.path.join(BASE_DIR, "outputs", "factores_hoy.json")
+
+if os.path.exists(ruta_json_ia):
     try:
-        with open(RUTA_INFORME, "r", encoding="utf-8") as f:
-            informe_texto = f.read().strip()
+        with open(ruta_json_ia, "r", encoding="utf-8") as f:
+            datos_ia = json.load(f)
+            # Extraemos el texto de la IA
+            if "factores" in datos_ia and "razonamiento" in datos_ia["factores"]:
+                informe_texto = datos_ia["factores"]["razonamiento"]
+            elif "razonamiento" in datos_ia:
+                informe_texto = datos_ia["razonamiento"]
     except:
         pass
 
-if informe_texto:
-    st.markdown('<div class="informe-label">🤖 Resumen Ejecutivo (IA Generativa)</div>', unsafe_allow_html=True)
-    st.info(informe_texto)
+st.markdown('<div class="informe-label">🤖 Informe de Riesgo Operativo (IA Generativa)</div>', unsafe_allow_html=True)
+st.info(informe_texto)
 
-# --- MÓDULO DE TRANSPARENCIA IA (XAI) ---
-try:
-    with open(os.path.join(BASE_DIR, "outputs", "factores_hoy.json"), "r", encoding="utf-8") as f:
-        datos_ia = json.load(f)
-        ctx = datos_ia.get("contexto", {})
-        
-    with st.expander("🔍 Auditoría de Ingesta: Variables sociológicas en tiempo real"):
-        col_A, col_B = st.columns(2)
-        
-        texto_clima = str(ctx.get('clima', {}).get('resumen', 'N/A'))
-        texto_clima_limpio = texto_clima.replace('NaN', 'No disponible').replace('nan', 'No disponible')
-        
-        col_A.markdown(f"**🌦️ Clima:** {texto_clima_limpio}")
-        col_A.markdown(f"**✈️ Tráfico aéreo:** {ctx.get('vuelos', {}).get('resumen', 'N/A')}")
-        col_A.markdown(f"**🚢 Actividad portuaria:** {ctx.get('cruceros', {}).get('resumen', 'N/A')}")
-        col_A.markdown(f"**💨 Índices medioambientales:** {ctx.get('aire', {}).get('resumen', 'N/A')}")
-        
-        col_B.markdown(f"**📅 Tipología de jornada:** Día {ctx.get('calendario', {}).get('perfil_dia', {}).get('nombre', 'N/A')}")
-        col_B.markdown(f"**🏨 Carga turística (INE):** {ctx.get('hotelero', {}).get('resumen', 'N/A')}")
-        col_B.markdown(f"**🚧 Afecciones en infraestructura:** {ctx.get('obras', {}).get('resumen', 'N/A')}")
-except Exception as e:
-    pass
 # --------------------------------------------
 
 # ── KPIs DE RENDIMIENTO ───────────────────────────────────────────────────
@@ -686,10 +683,10 @@ c1, c2, c3, c4 = st.columns(4)
 sectores_estres = int((df_h.groupby('sector')['stress_score'].max() >= umbral_critico).sum())
 total_sectores  = df_h['sector'].nunique()
 
-c1.metric("⚡ Polígonos en estrés", f"{sectores_estres} / {total_sectores}")
+c1.metric("⚡ Sectores en estrés", f"{sectores_estres} / {total_sectores}")
 
 hora_pico_idx = df_h.groupby('hora')['caudal_predicho_m3'].mean().idxmax() if not df_h.empty else 0
-c2.metric("🕐 Concentración máxima", f"{int(hora_pico_idx):02d}:00h")
+c2.metric("🕐 Hora de concentración máxima", f"{int(hora_pico_idx):02d}:00h")
 
 c3.metric("💧 Máximo caudal estimado", f"{df_h['caudal_predicho_m3'].max():.2f} m³/h")
 c4.metric("🤖 F1-Score / Confianza", f"{df_h['confianza'].mean()*100:.0f}%")
@@ -701,8 +698,8 @@ st.divider()
 render_panel_eventos(eventos)
 st.divider()
 
-# Formateo de nombres de sector para visualización
-df_h['sector_limpio'] = df_h['sector'].str.title()
+# Formateo de nombres de sector para visualización usando el mapeo real
+df_h['sector_limpio'] = df_h['sector_mapa'].str.title()
 
 col_mapa, col_graficos = st.columns([2, 1.2], gap="large")
 
@@ -786,9 +783,13 @@ else:
             ("🟠", "#FF6B2B") if s >= 55 else
             ("🟡", "#FFD700")
         )
+        
+        # 👇 TRADUCCIÓN DEL NOMBRE PARA LA BARRA LATERAL 👇
+        nombre_bonito = MAPEO_SECTORES.get(row['sector'], row['sector']).title()
+        
         st.sidebar.markdown(
             f"<div class='alerta-card' style='border-left-color:{color_b};'>"
-            f"<b>{icono} {row['sector']}</b><br>"
+            f"<b>{icono} {nombre_bonito}</b><br>"
             f"<small>Carga: <b>{s:.0f}/100</b> | T-Pico: {row['hora_pico']:02d}:00h<br>"
             f"💧 {row['caudal_pico']:.2f} m³/h | 🕵️ {row['causa']}</small>"
             f"</div>",
@@ -796,4 +797,5 @@ else:
         )
         df_sector_det = df_h[df_h['sector'] == row['sector']]
         if st.sidebar.button("🔍 Desplegar trazabilidad", key=f"btn_h_{row['sector']}", use_container_width=True):
-            modal_prediccion_horaria(row['sector'], df_sector_det)
+            # Le pasamos el nombre bonito también a la ventana modal
+            modal_prediccion_horaria(nombre_bonito, df_sector_det)

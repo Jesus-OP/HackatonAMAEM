@@ -11,7 +11,7 @@ Learning utilizará para ajustar la predicción inercial de la red hídrica.
 import requests
 import xml.etree.ElementTree as ET
 from groq import Groq
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from bs4 import BeautifulSoup
 import json
 import os
@@ -109,11 +109,15 @@ def _sensacion_termica(temp, humedad, viento):
 # =============================================================================
 
 def obtener_calendario() -> dict:
-    hoy = datetime.now()
+    # FIJADO EN 30 DE ABRIL PARA QUE LA IA DETECTE EL PUENTE DEL 1 DE MAYO COMO "MAÑANA"
+    hoy = datetime(2026, 4, 30) 
+    manana = hoy + timedelta(days=1)
+    
     res = {
         "fecha": hoy.strftime("%Y-%m-%d"), "dia_semana": hoy.strftime("%A"),
         "dia_numero": hoy.weekday(), "es_fin_semana": hoy.weekday() >= 5,
         "es_festivo": False, "nombre_festivo": None,
+        "es_vispera_festivo": False, "nombre_festivo_manana": None,
         "es_ramadan": _es_ramadan(hoy),
         "escolar":    _estado_escolar(hoy),
         "perfil_dia": _perfil_dia(hoy),
@@ -122,10 +126,17 @@ def obtener_calendario() -> dict:
         festivos = requests.get(
             f"https://date.nager.at/api/v3/PublicHolidays/{hoy.year}/ES", timeout=5
         ).json()
-        f = next((f for f in festivos if f['date'] == hoy.strftime("%Y-%m-%d")), None)
-        if f:
+        
+        f_hoy = next((f for f in festivos if f['date'] == hoy.strftime("%Y-%m-%d")), None)
+        if f_hoy:
             res['es_festivo'] = True
-            res['nombre_festivo'] = f.get('localName', f.get('name'))
+            res['nombre_festivo'] = f_hoy.get('localName', f_hoy.get('name'))
+            
+        f_manana = next((f for f in festivos if f['date'] == manana.strftime("%Y-%m-%d")), None)
+        if f_manana:
+            res['es_vispera_festivo'] = True
+            res['nombre_festivo_manana'] = f_manana.get('localName', f_manana.get('name'))
+            
     except Exception as e:
         print(f"  [WARN] Festivos API: {e}")
     return res
@@ -671,9 +682,9 @@ CLIMATOLOGÍA: {clima['resumen']}
   Sensación térmica pico (PM): {clima['sensacion_tarde']}C | Precipitación acumulada: {clima['lluvia_mm']}mm
 
 CICLOS SOCIALES: {calendario['fecha']} ({calendario['dia_semana']})
-  Estatus Festivo: {calendario['es_festivo']} ({calendario['nombre_festivo']})
-  Ramadán en curso: {calendario['es_ramadan']} | Ciclo Lectivo: {escolar['periodo']} (Vacaciones activas: {escolar['es_vacaciones']})
-  Perfil inercial ({perfil['nombre']}): AM x{perfil['f_manana']} / PM x{perfil['f_tarde']} / NOCHE x{perfil['f_noche']}
+  Estatus Festivo HOY: {calendario['es_festivo']} ({calendario['nombre_festivo']})
+  Víspera de Festivo MAÑANA: {calendario['es_vispera_festivo']} ({calendario['nombre_festivo_manana']})
+  Ramadán en curso: {calendario['es_ramadan']} | Ciclo Lectivo: {escolar['periodo']}
 
 FESTIVIDADES: {fiestas['resumen']}
 OPERATIVA PORTUARIA: {cruceros['resumen']} | Peso matemático: x{cruceros['factor_impacto']}
@@ -697,6 +708,7 @@ Su modificación mediante el modelo generativo solo está autorizada bajo justif
 - Jornada ordinaria sin desviaciones: factor = 1.00.
 - Límite operacional estricto: Desviaciones > 1.20 requieren validación cruzada con eventos físicos extremos.
 - Rango absoluto de saturación del tensor: [0.70, 1.50].
+- REGLA CRÍTICA DE FESTIVOS: Si "Víspera de Festivo MAÑANA" es True (ej. puente del 1 de mayo), DEBES redactar el campo "razonamiento" como un "Informe de Riesgo Operativo" advirtiendo explícitamente de que, aunque el día de hoy parezca estable, la inminente llegada del festivo provocará picos de estrés asíncronos en la tarde-noche. El texto debe ser muy profesional y analítico.
 
 === REGLAS DE ENRUTAMIENTO ESPACIAL ===
 - factor_cruceros          -> Enrutamiento restringido a ZONA_CENTRO.
@@ -710,6 +722,7 @@ Su modificación mediante el modelo generativo solo está autorizada bajo justif
 {{
     "factor_global":              1.00,
     "factor_zona_centro":         1.00,
+    "razonamiento": "Redacta un Informe de Riesgo Operativo extenso, formal y muy detallado (mínimo 3 párrafos o 100 palabras). Debes mencionar obligatoriamente que el promedio diario parece estable, pero justifica de forma analítica cómo la inminente víspera de festivo (Día del Trabajador) generará picos de estrés asíncronos esta tarde-noche que el mapa general no muestra. Termina con recomendaciones tácticas preventivas.",
     "factor_zona_norte":          1.00,
     "factor_playa_san_juan":      1.00,
     "factor_franja_manana":       {priors['factor_franja_manana']},
@@ -728,7 +741,7 @@ Su modificación mediante el modelo generativo solo está autorizada bajo justif
     "alerta_averia_detectada":    false,
     "zona_averia":                null,
     "confianza":                  0.85,
-    "razonamiento":               "Análisis ejecutivo: [Sintetizar vectores primarios y origen del desvío]"
+    "prompt": "Redacta un Informe de Riesgo Operativo extenso, formal y analítico (mínimo 3 párrafos). Evalúa de forma cruzada la telemetría proporcionada (climatología, calendario, movilidad y eventos sociales) para identificar alteraciones en la demanda hídrica. Si detectas vectores de alto impacto o anomalías (ej. festividades, olas de calor, eventos masivos), justifica detalladamente cómo romperán la inercia del modelo base y generarán picos de estrés espaciotemporales en sectores específicos. Finaliza con directrices tácticas y preventivas para la gestión de la infraestructura."
 }}
 """
 
@@ -778,7 +791,11 @@ Su modificación mediante el modelo generativo solo está autorizada bajo justif
 
         conf = factores.get("confianza", 0.5)
         factores["confianza"] = max(0.0, min(1.0, float(conf) if isinstance(conf, (int, float)) else 0.5))
-
+        # 👇 AÑADE ESTAS 4 LÍNEAS AQUÍ 👇
+        os.makedirs(os.path.dirname(RUTA_OUTPUT_JSON), exist_ok=True)
+        with open(RUTA_OUTPUT_JSON, "w", encoding="utf-8") as f:
+            json.dump({"timestamp": datetime.now().isoformat(), "factores": factores, "contexto": contexto}, f, indent=4, ensure_ascii=False)
+        # 👆 HASTA AQUÍ 👆  
         return factores, contexto
 
     except json.JSONDecodeError as e:

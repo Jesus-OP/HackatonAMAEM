@@ -1,5 +1,5 @@
 **Informe de Riesgo Operativo**
 
-La red de abastecimiento de GLOBAL CIUDAD presenta un volumen proyectado de 51447.81 M3, con una tasa de variación del -0.5%. No se detectan sectores en estrés crítico ni horas críticas. El clima despejado y la ausencia de festividades locales no influyen en la demanda. El episodio de sequía puede afectar la disponibilidad de recursos.
+La red de abastecimiento de GLOBAL CIUDAD presenta un volumen proyectado de 53508.76 M3, con una tasa de variación de -0.3%. No se detectan sectores en estrés crítico ni horas críticas de estrés. El clima despejado y la ausencia de festividades y eventos locales sugieren una demanda estable.
 
-La desviación del caudal esperado se relaciona con la sequía, lo que puede generar una disminución en la oferta. Se recomienda ajustar la infraestructura para optimizar la eficiencia del agua y reducir la pérdida de recursos. Es fundamental monitorear la situación y realizar ajustes tácticos para garantizar la estabilidad del sistema. Se sugiere revisar y actualizar los planes de contingencia para abordar posibles escenarios de escasez.
+La desviación del caudal esperado se relaciona con la falta de eventos y festividades, lo que reduce la demanda. Se recomienda ajustar la infraestructura para optimizar el flujo de suministro, considerando la reducción de la demanda. Esto permitirá mejorar la eficiencia y reducir costos. Se sugiere monitorear la situación para realizar ajustes adicionales si es necesario.

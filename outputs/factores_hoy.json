@@ -1,0 +1,113 @@
+{
+    "timestamp": "2026-04-29T16:48:25.717036",
+    "factores": {
+        "factor_global": 1.0,
+        "factor_zona_centro": 1.0,
+        "razonamiento": "El análisis de la telemetría de entrada indica que, aunque el día de hoy parece estable, la inminente llegada del Día del Trabajador generará picos de estrés asíncronos esta tarde-noche. La ausencia de tráfico de cruceros y la baja ocupación hotelera sugieren una demanda moderada en la ZONA_CENTRO. Sin embargo, la proximidad del festivo puede provocar un aumento en la movilidad y la demanda de servicios en la zona. Es importante destacar que, aunque el promedio diario parece estable, la inercia del modelo base puede romperse debido a la llegada del festivo, lo que generará picos de estrés espaciotemporales en sectores específicos. Se recomienda tomar medidas preventivas para garantizar la gestión eficiente de la infraestructura y minimizar los impactos negativos en la demanda hídrica.",
+        "factor_zona_norte": 1.0,
+        "factor_playa_san_juan": 1.0,
+        "factor_franja_manana": 1.0,
+        "factor_franja_tarde": 1.02,
+        "factor_franja_noche": 1.02,
+        "factor_fin_de_semana": 1.0,
+        "factor_ramadan_nocturno": 1.0,
+        "factor_calor_acumulado": 1.0,
+        "factor_vacaciones_escolares": 1.0,
+        "factor_cruceros": 1.0,
+        "factor_vuelos_turismo": 1.0,
+        "factor_eventos": 1.0,
+        "factor_movilidad_ciudad": 1.0,
+        "factor_obras_construccion": 1.0,
+        "factor_ocupacion_hotelera": 0.8,
+        "alerta_averia_detectada": false,
+        "zona_averia": null,
+        "confianza": 0.85
+    },
+    "contexto": {
+        "clima": {
+            "temp_max": 23.1,
+            "temp_min": 13.9,
+            "lluvia_mm": 0.0,
+            "hora_pico_calor": 15,
+            "horas_sobre_28c": 0,
+            "horas_sobre_32c": 0,
+            "sensacion_tarde": 20.8,
+            "resumen": "Despejado: 23.1C | Pico 15h | 0h >28C | Sensacion tarde 21C"
+        },
+        "calendario": {
+            "fecha": "2026-04-30",
+            "dia_semana": "Thursday",
+            "dia_numero": 3,
+            "es_fin_semana": false,
+            "es_festivo": false,
+            "nombre_festivo": null,
+            "es_vispera_festivo": true,
+            "nombre_festivo_manana": "Fiesta del trabajo",
+            "es_ramadan": false,
+            "escolar": {
+                "es_vacaciones": false,
+                "periodo": "Ciclo lectivo ordinario",
+                "patron": "Pico matutino estándar (07:00-08:30)."
+            },
+            "perfil_dia": {
+                "nombre": "Jueves",
+                "f_manana": 1.0,
+                "f_tarde": 1.02,
+                "f_noche": 1.02,
+                "nota": "Incremento leve ocio nocturno."
+            }
+        },
+        "aire": {
+            "polvo_ug_m3": 13.0,
+            "alerta_calima": false,
+            "resumen": "Parámetros de calidad del aire normales."
+        },
+        "fiestas": {
+            "fiesta_hoy": null,
+            "fiesta_manana": null,
+            "es_semana_hogueras": false,
+            "resumen": "Sin festividades locales detectadas."
+        },
+        "cruceros": {
+            "cruceros_hoy": [],
+            "num_cruceros": 0,
+            "pasajeros_totales": 0,
+            "factor_impacto": 1.0,
+            "resumen": "Ausencia de tráfico de cruceros detectado en el puerto."
+        },
+        "vuelos": {
+            "vuelos_aterrizando": 0,
+            "vuelos_aproximacion": 0,
+            "pasajeros_est_hora": 0,
+            "factor_estacional": 1.0,
+            "resumen": "TRÁFICO AÉREO (ALC): 0 arribos en tiempo real | 0 en vector de aproximación. (Flujo estimado: ~0 pax/h) | Multiplicador estacional: x1.0"
+        },
+        "eventos": {
+            "eventos_hoy": [],
+            "num_eventos": 0,
+            "factor_evento": 1.0,
+            "resumen": "Registro de eventos vacío en el municipio."
+        },
+        "movilidad": {
+            "indice_movilidad": 100,
+            "variacion_mensual": 0,
+            "factor_movilidad": 1.0,
+            "resumen": "Estimación inercial de movilidad: 100/100. Multiplicador ponderado: x1.0."
+        },
+        "obras": {
+            "obras_activas": [],
+            "total_obras": 0,
+            "factor_obras": 1.0,
+            "resumen": "Telemetría de obras temporalmente no disponible."
+        },
+        "hotelero": {
+            "viajeros_ultimo_mes": 0,
+            "variacion_mensual_pct": 0,
+            "variacion_anual_pct": 0,
+            "factor_ocupacion": 0.8,
+            "periodo": "Inferencia mes 4",
+            "resumen": "Carga hotelera estimada: 80/100. Multiplicador ponderado: x0.8."
+        },
+        "social": "PRENSA LOCAL: Flujo de datos temporalmente inactivo.\nFOROS COMUNITARIOS: Ausencia de palabras clave críticas."
+    }
+}
